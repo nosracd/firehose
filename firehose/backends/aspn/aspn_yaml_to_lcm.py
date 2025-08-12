@@ -142,6 +142,27 @@ class AspnYamlToLCM(Backend):
     ):
         if self.current_struct is None:
             return
+
+        # Special case: the image_data field in measurement_image and the descriptor field in
+        # type_image_feature represent opaque data. These specific fields should be mapped to LCM's
+        # bytes type rather than widening to a signed integer.
+        if (
+            (
+                self.current_struct.struct_name == 'type_image_feature'
+                and field_name == 'descriptor'
+            )
+            or (
+                self.current_struct.struct_name == 'measurement_image'
+                and field_name == 'image_data'
+            )
+            or (
+                self.current_struct.struct_name
+                == 'measurement_satnav_subframe'
+                and field_name == 'data_vector'
+            )
+        ):
+            type_name = 'byte'
+
         docstr = format_docstring(doc_string, indent=INDENT, style='//')
         field_str = f"{type_name} {field_name}[{data_len}]"
         self.current_struct.struct_fields_buf.append(
