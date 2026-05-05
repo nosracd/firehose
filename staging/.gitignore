@@ -2,6 +2,10 @@ subprojects/eigen/
 subprojects/xtensor/
 subprojects/xtl/
 subprojects/xtensor-python/
-subprojects/pybind11-*/
+subprojects/pybind11/
 
 **/__pycache__
+
+.vscode/
+
+.cache
