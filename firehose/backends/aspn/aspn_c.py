@@ -53,6 +53,12 @@ class AspnCBackend(Backend):
             {sources}
             ]
 
+            aspn_headers = [
+            {headers}
+            ]
+
+            install_headers(aspn_headers, subdir: 'aspn23')
+
             aspn_c_inc_dir = include_directories('src')
 
             if not get_option('aspn-cpp-xtensor-py').disabled()
@@ -109,8 +115,19 @@ class AspnCBackend(Backend):
         """)))
 
         types_meson = '    \'' + '\',\n    \''.join(self.all_types_enum) + '\''
+
+        # Build out list of headers, starting with the sources but also adding in the headers
+        # without a corresponding source.
+        headers = [
+            source.replace('.c', '.h') for source in self.all_source_files
+        ]
+        headers.insert(0, '    \'src/aspn23/messages_and_types.h\',')
+        headers.insert(0, '    \'src/aspn23/common.h\',')
+        headers.insert(0, '    \'src/aspn23/aspn.h\',')
+
         meson_build = meson_build_template.format(
             sources='\n'.join(self.all_source_files),
+            headers='\n'.join(headers),
             types=types_meson,
             ASPN_DIR=ASPN_DIR,
         )

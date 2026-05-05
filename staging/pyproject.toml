@@ -10,7 +10,7 @@ setup = ['-Daspn-cpp-eigen=disabled',
          '-Ddds-generated=disabled',
          '-Dlcm-generated=disabled',
          '-Daspn-c-main-library=false']
-install = ['--tags=runtime,python-runtime']
+install = ['--tags=runtime,python-runtime,devel', '--skip-subprojects']
 
 [project]
 dependencies = ['numpy']

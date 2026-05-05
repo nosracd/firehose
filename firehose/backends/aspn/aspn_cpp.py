@@ -226,9 +226,17 @@ class AspnCppBackend(Backend):
             ]
             if type(generator) is AspnYamlToXtensorPyHeader:
                 sources = '\n'.join(all_source_files)
+
+                # Build out list of headers, using the sources.
+                headers = sources.replace('.cpp', '.hpp')
+
                 meson_build += f'''
 aspn_xtensor_py_sources = [
-    {sources}
+{sources}
+]
+
+aspn_xtensor_py_headers = [
+{headers}
 ]
 
 aspn_xtensor_py_dep = disabler()
@@ -240,7 +248,11 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
         sources: [aspn_xtensor_py_sources, 'src/aspn23/xtensor_py/xtensor_bindings.cpp'],
         include_directories: aspn_xtensor_py_include,
         override_options: ['b_coverage=false', 'b_sanitize=none'],
-        dependencies: [aspn_xtensor_py_deps, aspn_c_no_asan_dep])
+        dependencies: [aspn_xtensor_py_deps, aspn_c_no_asan_dep],
+        install_dir: python.get_install_dir() / 'aspn23_xtensor',
+        install: true)
+
+    install_headers(aspn_xtensor_py_headers, subdir: 'aspn23/xtensor_py')
 
     aspn_xtensor_py_dep = declare_dependency(
         link_whole: aspn_xtensor_py_static_lib,
