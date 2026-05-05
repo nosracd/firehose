@@ -1,5 +1,5 @@
 [build-system]
-requires = ['meson-python', 'numpy>=1.21', 'pybind11-stubgen>=2.5.5']
+requires = ['meson==1.8.4', 'meson-python', 'numpy>=1.21', 'pybind11-stubgen>=2.5.5']
 build-backend = 'mesonpy'
 
 [tool.meson-python.args]
