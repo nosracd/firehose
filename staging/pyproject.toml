@@ -17,3 +17,4 @@ dependencies = ['numpy']
 name = 'aspn23_xtensor'
 version = '0.dev2'
 description = 'ASPN-C++ (xtensor) Python Bindings'
+readme = 'aspn-cpp/README_PYTHON.md'
