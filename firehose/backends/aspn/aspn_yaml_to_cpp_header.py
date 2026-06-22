@@ -1,6 +1,7 @@
 from os.path import join
 from textwrap import dedent
 from typing import List, Union
+
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     ASPN_PREFIX,
@@ -9,8 +10,8 @@ from firehose.backends.aspn.utils import (
     format_and_write_to_file,
     format_c_codegen_array,
     format_docstring,
-    name_to_struct,
     is_length_field,
+    name_to_struct,
 )
 
 ASPN_DIR = ASPN_PREFIX.lower()
@@ -510,10 +511,10 @@ class AspnYamlToCppHeader(Backend):
     def matrix_includes(self) -> str:
         pass
 
-    def vector(self, type: str) -> str:
+    def vector(self, type: str, size: Union[str, int]) -> str:
         pass
 
-    def matrix(self, type: str) -> str:
+    def matrix(self, type: str, x: Union[str, int], y: Union[str, int]) -> str:
         pass
 
     def set_output_root_folder(self, output_root_folder: str):
@@ -580,7 +581,7 @@ class AspnYamlToCppHeader(Backend):
         f_type = (
             f'std::vector<{type_name[len(ASPN_PREFIX) :].strip("*")}>'
             if type_name.startswith(ASPN_PREFIX)
-            else self.vector(type_name)
+            else self.vector(type_name, data_len)
         )
 
         docstr = doc_string
@@ -631,14 +632,14 @@ class AspnYamlToCppHeader(Backend):
         except ValueError:
             pass
 
-        field_str = f"{self.matrix(type_name)} {field_name}"
+        field_str = f"{self.matrix(type_name, x, y)} {field_name}"
 
         self.current_struct.constructor_param_buf.append(field_str)
         self.current_struct.struct_fields_buf.append(
-            f"{docstr}{INDENT}{self.matrix(type_name)} get_{field_name}() const"
+            f"{docstr}{INDENT}{self.matrix(type_name, x, y)} get_{field_name}() const"
         )
         self.current_struct.struct_fields_buf.append(
-            f"{docstr}{INDENT}void set_{field_name}({self.matrix(type_name)})"
+            f"{docstr}{INDENT}void set_{field_name}({self.matrix(type_name, x, y)})"
         )
 
     def process_outer_managed_pointer_field(
@@ -786,14 +787,20 @@ class AspnYamlToXtensorHeader(AspnYamlToCppHeader):
         super().__init__()
 
     def matrix_includes(self) -> str:
-        return '''#include <xtensor/containers/xarray.hpp>
+        return '''#include <xtensor/containers/xtensor.hpp>
                   #include <xtensor/containers/xadapt.hpp>'''
 
-    def vector(self, type: str) -> str:
-        return f'xt::xarray<{type}>'
+    def vector(self, type: str, size: Union[str, int]) -> str:
+        if isinstance(size, int):
+            return f'xt::xtensor_fixed<{type}, xt::xshape<{size}>>'
+        else:
+            return f'xt::xtensor<{type}, 1>'
 
-    def matrix(self, type: str) -> str:
-        return f'xt::xarray<{type}>'
+    def matrix(self, type: str, x: Union[str, int], y: Union[str, int]) -> str:
+        if isinstance(x, int) and isinstance(y, int):
+            return f'xt::xtensor_fixed<{type}, xt::xshape<{x}, {y}>>'
+        else:
+            return f'xt::xtensor<{type}, 2>'
 
 
 class AspnYamlToXtensorPyHeader(AspnYamlToCppHeader):
@@ -803,14 +810,16 @@ class AspnYamlToXtensorPyHeader(AspnYamlToCppHeader):
         self.directory = 'xtensor_py'
 
     def matrix_includes(self) -> str:
-        return '''#include <xtensor-python/pyarray.hpp>
+        return '''#include <xtensor-python/pytensor.hpp>
                   #include <xtensor/containers/xadapt.hpp>'''
 
-    def vector(self, type: str) -> str:
-        return f'xt::pyarray<{type}>'
+    def vector(self, type: str, _: Union[str, int]) -> str:
+        return f'xt::pytensor<{type}, 1>'
 
-    def matrix(self, type: str) -> str:
-        return f'xt::pyarray<{type}>'
+    def matrix(
+        self, type: str, _: Union[str, int], __: Union[str, int]
+    ) -> str:
+        return f'xt::pytensor<{type}, 2>'
 
 
 class AspnYamlToEigenHeader(AspnYamlToCppHeader):
@@ -821,10 +830,12 @@ class AspnYamlToEigenHeader(AspnYamlToCppHeader):
     def matrix_includes(self) -> str:
         return '#include <Eigen/Dense>'
 
-    def vector(self, type: str) -> str:
+    def vector(self, type: str, _: Union[str, int]) -> str:
         return f'Eigen::Matrix<{type}, Eigen::Dynamic, 1>'
 
-    def matrix(self, type: str) -> str:
+    def matrix(
+        self, type: str, _: Union[str, int], __: Union[str, int]
+    ) -> str:
         return f'Eigen::Matrix<{type}, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>'
 
 
@@ -836,8 +847,10 @@ class AspnYamlToStlHeader(AspnYamlToCppHeader):
     def matrix_includes(self) -> str:
         return '#include <vector>'
 
-    def vector(self, type: str) -> str:
+    def vector(self, type: str, _: Union[str, int]) -> str:
         return f'std::vector<{type}>'
 
-    def matrix(self, type: str) -> str:
+    def matrix(
+        self, type: str, _: Union[str, int], __: Union[str, int]
+    ) -> str:
         return f'std::vector<{type}>'

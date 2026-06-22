@@ -1,15 +1,15 @@
 from os.path import join
 from textwrap import dedent
-from typing import List, Union
-from typing import Any
+from typing import Any, List, Union
+
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     ASPN_PREFIX,
     MatrixType,
     format_and_write_to_file,
+    is_length_field,
     name_to_struct,
     pascal_to_snake,
-    is_length_field,
 )
 
 EXTRA_CPP_INC = {
@@ -440,10 +440,10 @@ class AspnYamlToCppSource(Backend):
         self.namespace = self.matrix_type.name.lower()
         self.directory = self.matrix_type.name.lower()
 
-    def vector(self, type: str) -> str:
+    def vector(self, type: str, size: Union[str, int]) -> str:
         pass
 
-    def matrix(self, type: str) -> str:
+    def matrix(self, type: str, x: Union[str, int], y: Union[str, int]) -> str:
         pass
 
     def pointer_to_vector(
@@ -650,20 +650,20 @@ class AspnYamlToCppSource(Backend):
                 )
                 self.current_struct.param_getters.append(f'{field_name}_prep')
             self.current_struct.setters_getters_buf.append(f"""
-                {self.vector(type_name)} {self.current_struct.class_name}::get_{field_name}() const {{
+                {self.vector(type_name, data_len)} {self.current_struct.class_name}::get_{field_name}() const {{
                     nullptr_check();
                     {ptr_field_check}
                     {self.pointer_to_vector(get_ptr, data_len, type_name)}
                 }}
 
-            void {self.current_struct.class_name}::set_{field_name}({self.vector(type_name)} {field_name}) {{
+            void {self.current_struct.class_name}::set_{field_name}({self.vector(type_name, data_len)} {field_name}) {{
                 nullptr_check();
                 memcpy(c_struct->{field_name}, {field_name}.data(), {data_len} * sizeof({type_name}));
                 {set_lengths}
             }}
             """)
             self.current_struct.constructor_param_buf.append(
-                f'{self.vector(type_name)} {field_name}'
+                f'{self.vector(type_name, data_len)} {field_name}'
             )
 
     def process_matrix_field(
@@ -755,20 +755,20 @@ class AspnYamlToCppSource(Backend):
             raise NotImplementedError
 
         self.current_struct.setters_getters_buf.append(f"""
-            {self.matrix(type_name)} {self.current_struct.class_name}::get_{field_name}() const {{
+            {self.matrix(type_name, x, y)} {self.current_struct.class_name}::get_{field_name}() const {{
                 nullptr_check();
                 {ptr_field_check}
                 {self.pointer_to_matrix(get_ptr, x, y, type_name)}
             }}
 
-        void {self.current_struct.class_name}::set_{field_name}({self.matrix(type_name)} {field_name}) {{
+        void {self.current_struct.class_name}::set_{field_name}({self.matrix(type_name, x, y)} {field_name}) {{
             nullptr_check();
             memcpy(c_struct->{field_name}, {field_name}{self.matrix_to_pointer()}, {x} * {y} * sizeof({type_name}));
             {set_lengths}
         }}
         """)
 
-        field_str = f"{self.matrix(type_name)} {field_name}"
+        field_str = f"{self.matrix(type_name, x, y)} {field_name}"
         self.current_struct.constructor_param_buf.append(field_str)
 
     def process_outer_managed_pointer_field(
@@ -953,11 +953,17 @@ class AspnYamlToXtensorSource(AspnYamlToCppSource):
         self.matrix_type = MatrixType.XTENSOR
         super().__init__()
 
-    def vector(self, type: str) -> str:
-        return f'xt::xarray<{type}>'
+    def vector(self, type: str, size: Union[str, int]) -> str:
+        if isinstance(size, int):
+            return f'xt::xtensor_fixed<{type}, xt::xshape<{size}>>'
+        else:
+            return f'xt::xtensor<{type}, 1>'
 
-    def matrix(self, type: str) -> str:
-        return f'xt::xarray<{type}>'
+    def matrix(self, type: str, x: Union[str, int], y: Union[str, int]) -> str:
+        if isinstance(x, int) and isinstance(y, int):
+            return f'xt::xtensor_fixed<{type}, xt::xshape<{x}, {y}>>'
+        else:
+            return f'xt::xtensor<{type}, 2>'
 
     def pointer_to_vector(
         self, pointer: str, length: Union[int, str], type: str
@@ -998,11 +1004,13 @@ class AspnYamlToXtensorPySource(AspnYamlToXtensorSource):
         super().__init__()
         self.directory = 'xtensor_py'
 
-    def vector(self, type: str) -> str:
-        return f'xt::pyarray<{type}>'
+    def vector(self, type: str, _: Union[str, int]) -> str:
+        return f'xt::pytensor<{type}, 1>'
 
-    def matrix(self, type: str) -> str:
-        return f'xt::pyarray<{type}>'
+    def matrix(
+        self, type: str, _: Union[str, int], __: Union[str, int]
+    ) -> str:
+        return f'xt::pytensor<{type}, 2>'
 
 
 class AspnYamlToEigenSource(AspnYamlToCppSource):
@@ -1010,21 +1018,23 @@ class AspnYamlToEigenSource(AspnYamlToCppSource):
         self.matrix_type = MatrixType.EIGEN
         super().__init__()
 
-    def vector(self, type: str) -> str:
+    def vector(self, type: str, _: Union[str, int]) -> str:
         return f'Eigen::Matrix<{type}, Eigen::Dynamic, 1>'
 
-    def matrix(self, type: str) -> str:
+    def matrix(
+        self, type: str, _: Union[str, int], __: Union[str, int]
+    ) -> str:
         return f'Eigen::Matrix<{type}, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>'
 
     def pointer_to_vector(
         self, pointer: str, length: Union[int, str], type: str
     ) -> str:
-        return f'return Eigen::Map<{self.vector(type)}>( {pointer}, {length});'
+        return f'return Eigen::Map<{self.vector(type, length)}>( {pointer}, {length});'
 
     def pointer_to_matrix(
         self, pointer: str, x: Union[int, str], y: Union[int, str], type: str
     ) -> str:
-        return f'return Eigen::Map<{self.matrix(type)}>( {pointer}, {x}, {y});'
+        return f'return Eigen::Map<{self.matrix(type, x, y)}>( {pointer}, {x}, {y});'
 
     def matrix_to_pointer(self) -> str:
         return '.data()'
@@ -1050,11 +1060,13 @@ class AspnYamlToStlSource(AspnYamlToCppSource):
         self.matrix_type = MatrixType.STL
         super().__init__()
 
-    def vector(self, type: str) -> str:
+    def vector(self, type: str, _: Union[str, int]) -> str:
         return f'std::vector<{type}>'
 
-    def matrix(self, type: str) -> str:
-        return self.vector(type)
+    def matrix(
+        self, type: str, _: Union[str, int], __: Union[str, int]
+    ) -> str:
+        return self.vector(type, '')
 
     def pointer_to_vector(
         self, pointer: str, length: Union[int, str], type: str

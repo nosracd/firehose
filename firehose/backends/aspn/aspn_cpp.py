@@ -1,26 +1,27 @@
 from os import makedirs, sep
-from shutil import rmtree
 from os.path import join
+from shutil import rmtree
 from textwrap import dedent
 from typing import List, Union
+
 from ..backend import Backend
-from .aspn_yaml_to_cpp_source import (
-    AspnYamlToXtensorSource,
-    AspnYamlToXtensorPySource,
-    AspnYamlToEigenSource,
-    AspnYamlToStlSource,
-)
 from .aspn_yaml_to_cpp_header import (
-    AspnYamlToXtensorHeader,
-    AspnYamlToXtensorPyHeader,
     AspnYamlToEigenHeader,
     AspnYamlToStlHeader,
+    AspnYamlToXtensorHeader,
+    AspnYamlToXtensorPyHeader,
+)
+from .aspn_yaml_to_cpp_source import (
+    AspnYamlToEigenSource,
+    AspnYamlToStlSource,
+    AspnYamlToXtensorPySource,
+    AspnYamlToXtensorSource,
 )
 from .utils import (
     ASPN_PREFIX,
     format_and_write_to_file,
-    snake_to_pascal,
     is_length_field,
+    snake_to_pascal,
 )
 
 ASPN_DIR = ASPN_PREFIX.lower()
@@ -384,6 +385,8 @@ endif
 
             #include <functional>
             #include <memory>
+            
+            {xtensor_include}
 
             #include <{aspn_lower}/aspn.h>
             {includes}
@@ -434,6 +437,9 @@ endif
             std::shared_ptr<{aspn_lower}_{matrix}::AspnBase> copy_message(std::shared_ptr<{aspn_lower}_{matrix}::AspnBase> parent);
 
             }}
+
+
+            {xtensor_fixed_shape_equals_operator}
         """
 
         aspn_c_template = """
@@ -511,6 +517,42 @@ endif
 
         """
 
+        xtensor_include = """
+            // xtensor
+            #include <xtensor/containers/xfixed.hpp>
+        """
+
+        xtensor_fixed_shape_equals_operator = """
+            namespace xt {
+
+            /**
+            * Operator for comparing `xt::fixed_shape` type.
+            *
+            * This function is needed to allow for fine-grain tensor typing in ASPN
+            * messages.  For some reason, xtensor doesn't have a built in `==` operator
+            * for `xt::fixed_shape` type, causing the debug build of NavTK to fail
+            * because of xtensor shape asserts.  This is a known issue in xtensor
+            * (see https://github.com/xtensor-stack/xtensor/issues/2376).
+            */
+            template <size_t... I1, size_t... I2>
+            constexpr bool operator==(const fixed_shape<I1...>&, const fixed_shape<I2...>&) {
+                if constexpr (sizeof...(I1) != sizeof...(I2)) {
+                    return false;
+                } else {
+                    constexpr size_t shape1[] = {I1...};
+                    constexpr size_t shape2[] = {I2...};
+
+                    for (size_t i = 0; i < sizeof...(I1); i++) {
+                        if (shape1[i] != shape2[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+            }  // namespace xt
+        """
+
         for generator in self.header_generators:
             print(f"Generating aspn_{generator.namespace}.hpp")
             output_filepath = join(
@@ -530,6 +572,14 @@ endif
                 aspn_lower=ASPN_PREFIX.lower(),
                 aspn_prefix=ASPN_PREFIX,
                 includes='\n'.join(includes),
+                xtensor_fixed_shape_equals_operator=(
+                    xtensor_fixed_shape_equals_operator
+                    if generator.namespace == 'xtensor'
+                    else ''
+                ),
+                xtensor_include=(
+                    xtensor_include if generator.namespace == 'xtensor' else ''
+                ),
             )
             format_and_write_to_file(aspn_h, output_filepath)
 
