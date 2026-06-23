@@ -3,10 +3,14 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name="aspn23_lcm"
-version="0.1.1"
-description="The LCM Python representation of ASPN-23"
-dependencies=[]
+name="aspn23_lcm_conversions"
+version="0.1.0"
+description="A set of functions to convert between ASPN-Python and ASPN-LCM"
+dependencies=[
+    "aspn23",
+    "aspn23_lcm",
+    "numpy"
+]
 requires-python = ">= 3.5"
 license = 'Apache-2.0'
 license-files = ['LICENSE']

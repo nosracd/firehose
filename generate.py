@@ -640,11 +640,14 @@ def create_targets(args: argparse.Namespace) -> None:
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=[
                 "-d",
-                join(args.output_dir, "lcm", "python", "aspn23_lcm"),
+                join(
+                    args.output_dir,
+                    "aspn23_lcm_conversions",
+                    "aspn23_lcm_conversions",
+                ),
                 "-o",
                 "lcmtranslations",
             ],
-            dependencies=["aspn_lcm"],
         ),
         FirehoseTarget(
             name="aspn_py",

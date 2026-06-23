@@ -96,7 +96,7 @@ class AspnYamlToLCMTranslations(Backend):
             )
             imports_aspn.extend(s.imports_aspn)
             imports_lcm.append(
-                f"from .{snake_name} import {snake_name} as Lcm{s.struct_name}"
+                f"from aspn23_lcm.{snake_name} import {snake_name} as Lcm{s.struct_name}"
             )
             exports.append(f"lcm_to_{snake_name} as lcm_to_{snake_name}")
             exports.append(f"{snake_name}_to_lcm as {snake_name}_to_lcm")
