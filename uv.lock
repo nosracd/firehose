@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -78,12 +78,8 @@ wheels = [
 
 [[package]]
 name = "cxxheaderparser"
-version = "1.6.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/71/88/bcb6400315da0df5f18197a285863d7da99bfec02a46c91df95a225df18f/cxxheaderparser-1.6.2.tar.gz", hash = "sha256:4574f09908609a7bf5d93841fae6e677b803e9708f564ae599382c1f0e18c7ed", size = 52562, upload-time = "2025-12-16T05:02:14.048Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/3b/ef8c9839b958b853f9a081de7a2a8c48c4f73b00269cf1048e009727c032/cxxheaderparser-1.6.2-py3-none-any.whl", hash = "sha256:92aae2b45cb96e4bb5b4be392cca73afef439f06d612c5da3a9cab6d7a13e4ae", size = 58935, upload-time = "2025-12-16T05:02:12.433Z" },
-]
+version = "0.0.0.post0.dev55"
+source = { git = "https://github.com/robotpy/cxxheaderparser.git?rev=ba4222560fc1040670b1a917d5d357198e8ec5d6#ba4222560fc1040670b1a917d5d357198e8ec5d6" }
 
 [[package]]
 name = "firehose"
@@ -105,6 +101,7 @@ dev = [
     { name = "meson" },
     { name = "mypy" },
     { name = "pip" },
+    { name = "pybind11-stubgen" },
 ]
 
 [package.metadata]
@@ -123,6 +120,7 @@ dev = [
     { name = "meson", specifier = ">=1,<1.10" },
     { name = "mypy", specifier = ">=1.9.0" },
     { name = "pip" },
+    { name = "pybind11-stubgen", specifier = ">=2.5.5" },
 ]
 
 [[package]]
@@ -508,6 +506,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cf/86/0248f086a84f01b37aaec0fa567b397df1a119f73c16f6c7a9aac73ea309/platformdirs-4.5.1.tar.gz", hash = "sha256:61d5cdcc6065745cdd94f0f878977f8de9437be93de97c1c12f853c9c0cdcbda", size = 21715, upload-time = "2025-12-05T13:52:58.638Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/28/3bfe2fa5a7b9c46fe7e13c97bda14c895fb10fa2ebf1d0abb90e0cea7ee1/platformdirs-4.5.1-py3-none-any.whl", hash = "sha256:d03afa3963c806a9bed9d5125c8f4cb2fdaf74a55ab60e5d59b3fde758104d31", size = 18731, upload-time = "2025-12-05T13:52:56.823Z" },
+]
+
+[[package]]
+name = "pybind11-stubgen"
+version = "2.5.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/81/81/81900180501a51056572dd01aa852cc2d162478d4676ecebbfaad5cc20d1/pybind11_stubgen-2.5.5.tar.gz", hash = "sha256:758d6d6bbeefc62ad7f78d5e5bbf357ccf6af83cd4504f5f549403f452942708", size = 25031, upload-time = "2025-08-09T01:22:44.403Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4f/e4/4f2d41881fae547f06ffa4c9748fa8ed13c4db5c830ff268b84175546b3c/pybind11_stubgen-2.5.5-py3-none-any.whl", hash = "sha256:10824cd2fc5cbbee032b8fb39e6f6c08de232deb309bc66d786a6c6e8a4601bd", size = 30210, upload-time = "2025-08-09T01:22:43.135Z" },
 ]
 
 [[package]]
