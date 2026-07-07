@@ -1,6 +1,7 @@
 from .backend import Backend
 from .aspn.aspn_c import AspnCBackend
 from .aspn.aspn_cpp import AspnCppBackend
+from .aspn.aspn_json import AspnJsonBackend
 from .aspn.aspn_py import AspnPyBackend
 from .aspn.aspn_yaml_to_lcm_translations import AspnYamlToLCMTranslations
 from .aspn.aspn_c_marshaling import AspnCMarshalingBackend
@@ -16,6 +17,7 @@ __all__ = [
     "Backend",
     "AspnCBackend",
     "AspnCppBackend",
+    "AspnJsonBackend",
     "AspnPyBackend",
     "AspnYamlToLCMTranslations",
     "AspnCMarshalingBackend",

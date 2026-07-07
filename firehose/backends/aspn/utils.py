@@ -3,6 +3,7 @@ from textwrap import dedent
 from subprocess import check_call, PIPE, run
 from enum import Enum
 from os.path import splitext
+from typing import List
 
 ASPN_PREFIX = "Aspn23"
 ASPN_NULLABILITY_MACRO_START = 'ASPN_ASSUME_NONNULL_BEGIN'
@@ -21,6 +22,7 @@ PY_MULTILINE_TEMPLATE = dedent('''
     ''')
 PREFIX_MAP = {'//': '// ', '#': '# ', '/**': ' * ', '"""': ''}
 INDENT = 4 * " "
+JSON_INDENT = 2 * " "
 
 # Mappings of ASPN specification types to C types
 ASPN_TO_C_MAPPINGS = {
@@ -51,6 +53,21 @@ ASPN_TO_DDS_MAPPINGS = {
     'int16': 'int16',
     'int32': 'int32',
     'int64': 'int64',
+}
+
+# Mappings of ASPN specification types to JSON types  # TODO: add value limits
+ASPN_TO_JSON_MAPPINGS = {
+    'bool': 'boolean',
+    'float32': 'number',
+    'float64': 'number',
+    'uint8': 'integer',
+    'uint16': 'integer',
+    'uint32': 'integer',
+    'uint64': 'integer',
+    'int8': 'integer',
+    'int16': 'integer',
+    'int32': 'integer',
+    'int64': 'integer',
 }
 
 # Mappings of ASPN specification types to LCM IDL types
@@ -125,6 +142,7 @@ CODEGEN_MAPPINGS = {
     ),
     'AspnYamlToDDS': (ASPN_TO_DDS_MAPPINGS, lambda x: snake_to_pascal(x)),
     'AspnPyBackend': (ASPN_TO_PYTHON_MAPPINGS, lambda x: snake_to_pascal(x)),
+    'AspnJsonBackend': (ASPN_TO_JSON_MAPPINGS, lambda x: x),
 }
 
 MatrixType = Enum(
@@ -201,7 +219,10 @@ def name_to_enum_field(
 
     if codegen_instance.__class__.__name__ in ['AspnYamlToLCM']:
         return f'{enum_name}_{enum_field}'.upper()
-    elif codegen_instance.__class__.__name__ in ['AspnPyBackend']:
+    elif codegen_instance.__class__.__name__ in [
+        'AspnPyBackend',
+        'AspnJsonBackend',
+    ]:
         return enum_field.upper()
     else:
         # Right now struct names should always already be in snake case.
@@ -226,6 +247,8 @@ def name_to_enum_value(codegen_instance, enum_name: str) -> str:
         return (
             f"{codegen_instance.struct_name}{snake_to_pascal(enum_name)}Value"
         )
+    elif codegen_instance.__class__.__name__ in ['AspnJsonBackend']:
+        return snake_to_camel(enum_name)
     else:
         pascal_enum = snake_to_pascal(enum_name)
         struct_name = codegen_instance.struct_name
@@ -298,6 +321,44 @@ def snake_to_pascal(snake_string: str) -> str:
         else:
             out += char
     return ''.join(out)
+
+
+def camel_to_snake(str_name: str, screaming: bool = False) -> str:
+    """
+    Accepts a string in camelCase and converts it to snake_case.
+    For example:
+    'measurementImu' will return 'measurement_imu'
+    'measurementTdoa1Tx2Rx' will return 'measurement_TDOA_1Tx_2Rx'
+    'measurementDirectionOfMotion3D' will return
+    'measurement_direction_of_motion_3d'
+    'measurementDirection2DToPoints' will return
+    'measurement_direction_2d_to_points'
+    """
+
+    if str_name:
+        return pascal_to_snake(str_name[0].upper() + str_name[1:], screaming)
+    else:
+        return str_name
+
+
+def snake_to_camel(snake_string: str) -> str:
+    """
+    Accepts a string in snake_case and converts it to camelCase.
+    For example:
+    'measurement_imu' will return 'measurementImu'
+    'measurement_TDOA_1Tx_2Rx' will return 'measurementTdoa1Tx2Rx'
+    'measurement_direction_of_motion_3d' will return
+    'measurementDirectionOfMotion3D'
+    'measurement_direction_2d_to_points' will return
+    'measurementDirection2DToPoints'
+    """
+
+    out = snake_to_pascal(snake_string)
+
+    if out:
+        out = out[0].lower() + out[1:]
+
+    return out
 
 
 def clang_format_file_contents(file_content, output_path):
@@ -438,6 +499,53 @@ def format_and_write_py_file(file_content, out_path):
     # Write the formatted code to the output file
     with open(out_path, "a", encoding="utf-8") as f:
         f.write(formatted_code)
+
+
+def format_and_write_json_file(file_content, out_path):
+    content = file_content
+    with open(out_path, "a", encoding="utf-8") as f:
+        f.write(content)
+
+
+def format_json_string(string_to_format: str):
+    output = string_to_format.replace("\n", " ")
+    output = output.replace("\"", "'")
+    output = '\"' + output + '\"'
+    output = output.replace(' \"', '\"')
+    return output
+
+
+def create_json_prop(name: str, pairs: dict, indent_level: int = 0) -> str:
+    """
+    Creates json property structure from nested dictionary structure. A blank
+    name field creates empty braces around the contained properties.
+    """
+    output = []
+    content = []
+    if name == "":
+        output.append(f"{indent_level*JSON_INDENT}{{\n")
+    else:
+        output.append(f"{indent_level*JSON_INDENT}{name}: {{\n")
+    for key, val in pairs.items():
+        if type(val) is dict:
+            content.append(create_json_prop(key, val, indent_level + 1))
+        elif type(val) is list:
+            array_content = []
+            for item in val:
+                array_content.append(
+                    create_json_prop("", item, indent_level + 2)
+                )
+            content.append(
+                f"{(indent_level+1)*JSON_INDENT}{key}: [\n"
+                + ",\n".join(array_content)
+                + f"\n{(indent_level+1)*JSON_INDENT}]"
+            )
+        else:
+            content.append(f"{(indent_level+1)*JSON_INDENT}{key}: {val}")
+
+    output.append(",\n".join(content))
+    output.append(f"\n{indent_level*JSON_INDENT}}}")
+    return "".join(output)
 
 
 def _get_line_indent(line):

@@ -9,6 +9,7 @@ from pathlib import Path
 from firehose.backends import (
     AspnCBackend,
     AspnCppBackend,
+    AspnJsonBackend,
     AspnPyBackend,
     AspnCMarshalingBackend,
     AspnYamlToDDS,
@@ -35,6 +36,16 @@ def generate_doc_string(yaml_field, codegen_class, is_enum):
         docstr = f'Description: {description}\nUnits: {units}'
         if length is not None:
             docstr += f'\nLength: {length}'
+        return docstr
+    elif codegen_class in ('AspnJsonBackend') and not is_enum:
+        description = yaml_field.get('description', '')
+        units = yaml_field.get('units', None)
+        length = yaml_field.get('length', None)
+        docstr = description
+        if units is not None:
+            docstr += f' Units: {units}'
+        if length is not None:
+            docstr += f' Length: {length}'
         return docstr
     else:
         return yaml_field.get('description', '')
@@ -197,6 +208,7 @@ def main():
         'lcmtranslations': AspnYamlToLCMTranslations,
         'ros': AspnYamlToROS,
         'ros_translations': AspnYamlToROSTranslations,
+        'json': AspnJsonBackend,
         'py': AspnPyBackend,
         'xmi': AspnYamlToXMI,
         'marshal_lcm_c': AspnCMarshalingBackend,
@@ -225,6 +237,12 @@ def main():
         action='append',
         help="Extra icd dirs to include",
         default=[],
+    )
+    parser.add_argument(
+        "-m",
+        "--metadata_ext",
+        action='store_true',
+        help="Pass extra metadata to backend",
     )
     args = parser.parse_args()
 
@@ -269,6 +287,12 @@ def main():
                 backend.begin_struct(yaml_data['name'], True)
                 gen_struct(backend, yaml_data)
                 backend.begin_struct(yaml_data['name'], False)
+                gen_struct(backend, yaml_data)
+                continue
+
+            # Pass extra type metadata to struct
+            if args.metadata_ext:
+                backend.begin_struct(yaml_data['name'], yaml_data)
                 gen_struct(backend, yaml_data)
                 continue
 

@@ -650,6 +650,17 @@ def create_targets(args: argparse.Namespace) -> None:
             ],
         ),
         FirehoseTarget(
+            name="aspn_json",
+            runner=ASPN_CODEGEN_RUNNER,
+            cmd_args=[
+                "-d",
+                join(args.output_dir, "aspn-json"),
+                "-o",
+                "json",
+                "-m",
+            ],
+        ),
+        FirehoseTarget(
             name="aspn_py",
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=["-d", join(args.output_dir, "aspn-py"), "-o", "py"],
