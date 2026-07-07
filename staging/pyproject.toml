@@ -20,3 +20,15 @@ description = 'ASPN-C++ (xtensor) Python Bindings'
 license = 'Apache-2.0'
 license-files = ['LICENSE']
 readme = 'aspn-cpp/README_PYTHON.md'
+
+[tool.pytest.ini_options]
+norecursedirs = ['subprojects']
+
+[[tool.cibuildwheel.overrides]]
+select = "*armv7*"
+before-all = """
+  apt-get update &&
+  apt-get install -y libopenblas-dev gcc-10 g++-10 &&
+  update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 &&
+  update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 60
+"""
