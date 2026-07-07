@@ -1,0 +1,82 @@
+name: 'Set up Docker'
+description: >
+  Pulls docker image from registry, or builds if not available.
+runs:
+  using: "composite"
+  steps:
+      # Harvest UID and GID for building the docker container
+    - name: Get Runner UID and GID
+      shell: bash
+      run: |
+        echo "UID=$(id -u)" >> $GITHUB_ENV
+        echo "GID=$(id -g)" >> $GITHUB_ENV
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+
+    - name: Compute Dockerfile hash
+      id: dockerfile-hash
+      shell: bash
+      run: |
+        HASH=$(sha256sum docker/${{ inputs.dockerfile }} | cut -d' ' -f1 | cut -c1-12)
+        echo "hash=$HASH" >> $GITHUB_OUTPUT
+        echo "Dockerfile hash: $HASH"
+
+    - name: Convert owner to lowercase
+      id: repo
+      shell: bash
+      run: |
+        echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+    - name: Try to pull Docker image from registry
+      id: pull
+      shell: bash
+      continue-on-error: true
+      run: docker pull ghcr.io/${{ steps.repo.outputs.owner }}/firehose:${{ inputs.tag }}-${{ steps.dockerfile-hash.outputs.hash }}
+
+    - name: Set up Docker Buildx
+      if: steps.pull.outcome == 'failure'
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and Push Docker Image
+      if: steps.pull.outcome == 'failure'
+      id: docker_build
+      uses: docker/build-push-action@v5
+      with:
+          push: true
+          tags: ghcr.io/${{ steps.repo.outputs.owner }}/firehose:${{ inputs.tag }}-${{ steps.dockerfile-hash.outputs.hash }}
+          build-args: |
+            UID=${{ env.UID }}
+            GID=${{ env.GID }}
+            ROS_DISTRO=${{ inputs.ros_distro }}
+          context: docker/
+          file: docker/${{ inputs.dockerfile }}
+      env:
+        SOURCE_DATE_EPOCH: 0
+
+    - name: Pull image after build
+      if: steps.pull.outcome == 'failure'
+      shell: bash
+      run: docker pull ghcr.io/${{ steps.repo.outputs.owner }}/firehose:${{ inputs.tag }}-${{ steps.dockerfile-hash.outputs.hash }}
+
+    - name: Retag image
+      shell: bash
+      run: docker tag ghcr.io/${{ steps.repo.outputs.owner }}/firehose:${{ inputs.tag }}-${{ steps.dockerfile-hash.outputs.hash }} ${{ inputs.tag }}
+
+inputs:
+  tag:
+    description: 'What to tag the resulting docker image'
+    required: true
+    default: firehose
+  dockerfile:
+    description: 'Which Dockerfile to build'
+    required: true
+    default: Dockerfile
+  ros_distro:
+    description: 'When building the ROS dockerfile, selects which base image to pull from'
+    required: false
+    default: humble

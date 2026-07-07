@@ -8,57 +8,25 @@ jobs:
         steps:
         - uses: actions/checkout@v4
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
-
-        # Harvest UID and GID for building the docker container
-        - name: Get Runner UID and GID
-          run: |
-            echo "UID=$(id -u)" >> $GITHUB_ENV
-            echo "GID=$(id -g)" >> $GITHUB_ENV
-
-        - name: Build Docker image
-          uses: docker/build-push-action@v5
+        - name: Set up firehose docker container
+          uses: ./.github/actions/setup
           with:
-              context: docker/
-              push: false
-              tags: firehose
-              cache-from: type=gha
-              cache-to: type=gha,mode=max
-              load: true
-              build-args: |
-                UID=${{ env.UID }}
-                GID=${{ env.GID }}
+            tag: firehose
+            dockerfile: Dockerfile
 
-        - name: Build ROS Humble Docker image
-          uses: docker/build-push-action@v5
+        - name: Set up ROS jazzy docker container
+          uses: ./.github/actions/setup
           with:
-              context: docker/
-              file: docker/Dockerfile.ros
-              push: false
-              tags: firehose-humble
-              cache-from: type=gha,scope=ros-humble
-              cache-to: type=gha,mode=max,scope=ros-humble
-              load: true
-              build-args: |
-                UID=${{ env.UID }}
-                GID=${{ env.GID }}
-                ROS_DISTRO=humble
+            tag: firehose-jazzy
+            dockerfile: Dockerfile.ros
+            ros_distro: jazzy
 
-        - name: Build ROS Jazzy Docker image
-          uses: docker/build-push-action@v5
+        - name: Set up ROS humble docker container
+          uses: ./.github/actions/setup
           with:
-              context: docker/
-              file: docker/Dockerfile.ros
-              push: false
-              tags: firehose-jazzy
-              cache-from: type=gha,scope=ros-jazzy
-              cache-to: type=gha,mode=max,scope=ros-jazzy
-              load: true
-              build-args: |
-                UID=${{ env.UID }}
-                GID=${{ env.GID }}
-                ROS_DISTRO=jazzy
+            tag: firehose-humble
+            dockerfile: Dockerfile.ros
+            ros_distro: humble
 
         - name: Generate
           run: |
