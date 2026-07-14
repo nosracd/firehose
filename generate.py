@@ -9,6 +9,7 @@ import sys
 from typing import Dict, List
 from glob import glob
 from os.path import join
+import inspect
 
 FIREMAN = r"""
 
@@ -439,15 +440,44 @@ def _build_lcm_jar(lcm_staging_dir: str) -> None:
         os.chdir(cwd)
 
 
+def _write_fingerprints(classes, struct_type: str, file) -> None:
+    file.write('| name | fingerprint | \n')
+    file.write('| ---- | ----------- | \n')
+    for name, aspn_class in classes:
+        if name.startswith(struct_type):
+            file.write(f'| {name} | {aspn_class().get_hash()} |\n')
+
+
+def _generate_lcm_fingerprint_table(output_dir: str) -> None:
+    sys.path.append(output_dir)
+    import aspn23_lcm
+
+    classes = inspect.getmembers(aspn23_lcm, inspect.isclass)
+    with open(join(output_dir, 'fingerprints.md'), 'w') as file:
+        file.write('# ASPN-LCM (Python) Fingerprints\n')
+        file.write('\n## Measurements\n\n')
+        _write_fingerprints(classes, 'measurement', file)
+        file.write('\n## Metadata\n\n')
+        _write_fingerprints(classes, 'metadata', file)
+        file.write('\n## Types\n\n')
+        _write_fingerprints(classes, 'type', file)
+
+
 # Generate the LCM code after the aspn lcm files are generated
 def post_aspn_lcm(output_dir: str, staging_dir: str) -> None:
     # Run the lcm codegen
     run_lcm_gen(output_dir)
 
+    lcm_output = join(output_dir, "lcm")
+
     # Build the LCM JAR and then clean up
     _build_lcm_jar(f"{staging_dir}/lcm")
-    shutil.rmtree(join(output_dir, "lcm", "gradle"), ignore_errors=True)
+    shutil.rmtree(join(lcm_output, "gradle"), ignore_errors=True)
     shutil.rmtree(join(staging_dir, "lcm", ".gradle"), ignore_errors=True)
+
+    # Generate table of fingerprints
+    lcm_python_output = join(lcm_output, "python")
+    _generate_lcm_fingerprint_table(lcm_python_output)
 
 
 def stage_files(staging_input_dir: str, output_dir: str) -> None:
