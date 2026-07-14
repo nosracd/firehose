@@ -15,7 +15,7 @@ install = ['--tags=runtime,python-runtime,devel', '--skip-subprojects']
 [project]
 dependencies = ['numpy']
 name = 'aspn23_xtensor'
-version = '0.1.0'
+version = '1.0.0'
 description = 'ASPN-C++ (xtensor) Python Bindings'
 license = 'Apache-2.0'
 license-files = ['LICENSE']

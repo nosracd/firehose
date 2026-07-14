@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name="aspn23_lcm"
-version="0.1.1"
+version="1.0.0"
 description="The LCM Python representation of ASPN-23"
 dependencies=[]
 requires-python = ">= 3.5"
