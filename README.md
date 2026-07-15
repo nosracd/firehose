@@ -17,6 +17,9 @@ To spin up the container, run:
 docker run --rm -dit -v $(pwd):/firehose -v ~/.ccache:/home/docker/.ccache --name firehose firehose bash
 ```
 
+Note: podman users may benefit from the addition of the argument `--userns=keep-id` when running the
+above command.
+
 Download all Python dependencies using:
 
 ```shell
