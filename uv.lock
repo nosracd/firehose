@@ -56,6 +56,22 @@ wheels = [
 ]
 
 [[package]]
+name = "clang-format"
+version = "14.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6f/d3/f1608c2226344901b0e88f977a9163f198ce4c8280a9ad3173a932c48adb/clang-format-14.0.0.tar.gz", hash = "sha256:60c631c990bb1fa2a20fb60c581560dec9c37ffb575e616fe9c05d45bdd3b407", size = 9252, upload-time = "2022-04-11T11:48:52.4Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/d1/889e81e8504452f3a78bf5103d77dcb7201964fcb2b5850a84ff6327bf90/clang_format-14.0.0-py2.py3-none-macosx_10_9_universal2.whl", hash = "sha256:2a75cfa5ce1ce77fea9c24d1a249bc8e07b3d62196ba96755e4fa4ef1e3658f7", size = 1016872, upload-time = "2022-04-11T11:48:43.355Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/19/d25455ea5ba4ea508d1c49cf2cc2d30e287e10ea13e91ce2ed6300985d4b/clang_format-14.0.0-py2.py3-none-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:b1fc036e3c419f867660d91c4bed56de76d5e2f076b68449c45f2fcd81e3049a", size = 1259454, upload-time = "2022-04-11T11:48:44.592Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/69/bf08f34219f6435dfaf0e29cf9afd7d815b10307c7e0394c2d3a43a0305c/clang_format-14.0.0-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:85c6c8078645eb14a52dc64ce122bfa992f51cc4066580e4d670bd15c0c07500", size = 1147372, upload-time = "2022-04-11T11:48:45.885Z" },
+    { url = "https://files.pythonhosted.org/packages/40/d3/ff0dbf8bfb0c1388870ef147616688c96d58578b0d478c362742a742baea/clang_format-14.0.0-py2.py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:580456c55436d6e4f236c4463ae5fd74948890f7379b502069467f0b0f4f130f", size = 1204962, upload-time = "2022-04-11T11:48:46.937Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/87/35db0a1060e8989c3b62ce030a87a0285e76637634949d398f6be61f9bba/clang_format-14.0.0-py2.py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:e6e678ac8008bf77de79a1c1eb9e30e7076bc22e52a1ba122a356a24c97715e9", size = 1948273, upload-time = "2022-04-11T11:48:48.197Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/2b/139402d516d10210834b3d4b4db5a41be9101e16cd8c1db0ec1f6a7ccaf5/clang_format-14.0.0-py2.py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:5384ec3880e2000e6c06884542d6ab217f8140f3ca142a63ec16ddf21ea95965", size = 1187726, upload-time = "2022-04-11T11:48:49.296Z" },
+    { url = "https://files.pythonhosted.org/packages/73/30/4ec4e957c07e3bbbab625b1252781864792fa5ca8d17f6ce1955cfefd08a/clang_format-14.0.0-py2.py3-none-win32.whl", hash = "sha256:17de21387ab5676daf265303b4a4bfcb1e9e886c62900e59a10b6e332fd210cd", size = 833546, upload-time = "2022-04-11T11:48:50.257Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/63/b82289b40330ae1ffd112b836f531cca1b43600dd8440ae66face8b5e1ce/clang_format-14.0.0-py2.py3-none-win_amd64.whl", hash = "sha256:d240f29f6a4a5e4c47af3ee37ac4ced4b5e71756c74cf3b513f0cb5b0de69d7d", size = 1006924, upload-time = "2022-04-11T11:48:51.294Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -88,6 +104,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "aspn" },
     { name = "black" },
+    { name = "clang-format" },
     { name = "cxxheaderparser" },
     { name = "isort" },
     { name = "lcm" },
@@ -108,6 +125,7 @@ dev = [
 requires-dist = [
     { name = "aspn", git = "https://github.com/Open-PNT/ASPN-ICD.git?rev=49473ac21ff300d861f7266a9ca38c4fd2b7265a" },
     { name = "black", specifier = "==26.3.1" },
+    { name = "clang-format", specifier = "==14" },
     { name = "cxxheaderparser", git = "https://github.com/robotpy/cxxheaderparser.git?rev=ba4222560fc1040670b1a917d5d357198e8ec5d6" },
     { name = "isort" },
     { name = "lcm", specifier = ">=1,<2" },

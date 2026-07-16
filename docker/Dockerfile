@@ -6,7 +6,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install common dependencies
 # build-essential: For compiling ASPN-C, etc.
 # ccache: To decrease compile times when building C/C++ code.
-# clang-format: For formatting source code
 # curl: For installing uv
 # cmake: For building the LCM subproject
 # git: For development
@@ -20,7 +19,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
   ccache \
-  clang-format \
   curl \
   cmake \
   git \

@@ -10,6 +10,7 @@ dependencies = [
     # main branch, committed 9 April 2026
     'aspn @ git+https://github.com/Open-PNT/ASPN-ICD.git@49473ac21ff300d861f7266a9ca38c4fd2b7265a',
     'black==26.3.1',
+    'clang-format==14',
     # main branch, committed 2 May, 2022
     'cxxheaderparser @ git+https://github.com/robotpy/cxxheaderparser.git@ba4222560fc1040670b1a917d5d357198e8ec5d6',
     'isort',
