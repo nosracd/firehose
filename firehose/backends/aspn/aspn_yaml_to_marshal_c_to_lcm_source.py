@@ -44,7 +44,7 @@ class AspnYamlToMarshalCToLCMSource(Backend):
             self.structs += [self.current_struct]
         self.current_struct = Struct(snake_case_struct_name)
 
-    def generate(self) -> str:
+    def generate(self) -> None:
         self.structs += [self.current_struct]
         c_file_contents = """/*
          * This code is generated via firehose.
