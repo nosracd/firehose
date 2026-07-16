@@ -5,6 +5,8 @@ from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     format_and_write_to_file,
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
+    ASPN_PREFIX_UPPER,
     snake_to_pascal,
     pascal_to_snake,
 )
@@ -22,7 +24,9 @@ class Struct:
         self.struct_name_versioned: str = (
             f"{ASPN_PREFIX}{snake_to_pascal(snake_case_struct_name)}"
         )
-        self.struct_name_lcm: str = f"aspn23_lcm_{snake_case_struct_name}"
+        self.struct_name_lcm: str = (
+            f"{ASPN_PREFIX_LOWER}_lcm_{snake_case_struct_name}"
+        )
         self.struct_enum: str = f"ASPN_{snake_case_struct_name}".upper()
         self.fn_basename: str = f"aspn_{snake_case_struct_name}".lower()
         self.function_from_prep_buf: List[str] = []
@@ -66,10 +70,10 @@ class Struct:
             }}}}
         """)
         self.run_test_from_function_template = dedent(
-            f"g_test_add_func(\"/lcm_aspn23_transport_plugin/test_marshal_{self.struct_name_lcm}\", test_marshal_{self.struct_name_lcm});"
+            f"g_test_add_func(\"/lcm_{ASPN_PREFIX_LOWER}_transport_plugin/test_marshal_{self.struct_name_lcm}\", test_marshal_{self.struct_name_lcm});"
         )
         self.run_test_to_function_template = dedent(
-            f"g_test_add_func(\"/lcm_aspn23_transport_plugin/test_marshal_{self.struct_name_versioned}\", test_marshal_{self.struct_name_versioned});"
+            f"g_test_add_func(\"/lcm_{ASPN_PREFIX_LOWER}_transport_plugin/test_marshal_{self.struct_name_versioned}\", test_marshal_{self.struct_name_versioned});"
         )
         self.test_from_function_template = dedent(f"""
             static void test_marshal_{self.struct_name_lcm}(void) {{{{
@@ -277,20 +281,18 @@ class AspnYamlToTestMarshalAspn23(Backend):
 
     # Helper Functions #
     def remove_aspn_prefix(self, type_name: str):
-        return type_name.replace("Aspn23", "")
+        return type_name.replace(ASPN_PREFIX, "")
 
     def remove_aspn_version(self, type_name: str):
-        if "aspn23" in type_name:
-            return type_name.replace("aspn23", "aspn")
-        if "Aspn23" in type_name:
-            return type_name.replace("Aspn23", "Aspn")
-        if "ASPN23" in type_name:
-            return type_name.replace("ASPN23", "ASPN")
+        if ASPN_PREFIX_LOWER in type_name:
+            return type_name.replace(ASPN_PREFIX_LOWER, "aspn")
+        if ASPN_PREFIX in type_name:
+            return type_name.replace(ASPN_PREFIX, "Aspn")
+        if ASPN_PREFIX_UPPER in type_name:
+            return type_name.replace(ASPN_PREFIX_UPPER, "ASPN")
 
     def get_lcm_type_name(self, type_name: str):
-        return (
-            f"aspn23_lcm_{pascal_to_snake(self.remove_aspn_prefix(type_name))}"
-        )
+        return f"{ASPN_PREFIX_LOWER}_lcm_{pascal_to_snake(self.remove_aspn_prefix(type_name))}"
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # Backend Methods # # # # # # # # # # # # # # #
@@ -459,16 +461,16 @@ class AspnYamlToTestMarshalAspn23(Backend):
                     }}"""
                 )
                 no_alloc_types = [
-                    "Aspn23TypeIntegrity",
-                    "Aspn23TypeSatnavSatelliteSystem",
-                    "Aspn23TypeSatnavSignalDescriptor",
-                    "Aspn23TypeHeader",
-                    "Aspn23TypeKeplerOrbit",
-                    "Aspn23TypeMounting",
-                    "Aspn23TypeSatnavClock",
-                    "Aspn23TypeSatnavTime",
-                    "Aspn23TypeTimestamp",
-                    "Aspn23TypeSatnavSvData",
+                    f"{ASPN_PREFIX}TypeIntegrity",
+                    f"{ASPN_PREFIX}TypeSatnavSatelliteSystem",
+                    f"{ASPN_PREFIX}TypeSatnavSignalDescriptor",
+                    f"{ASPN_PREFIX}TypeHeader",
+                    f"{ASPN_PREFIX}TypeKeplerOrbit",
+                    f"{ASPN_PREFIX}TypeMounting",
+                    f"{ASPN_PREFIX}TypeSatnavClock",
+                    f"{ASPN_PREFIX}TypeSatnavTime",
+                    f"{ASPN_PREFIX}TypeTimestamp",
+                    f"{ASPN_PREFIX}TypeSatnavSvData",
                 ]
                 if type_name in no_alloc_types:
                     self.current_struct.function_free_buf.append(f"{free}")
@@ -619,101 +621,100 @@ class AspnYamlToTestMarshalAspn23(Backend):
             if self.current_struct.struct_name.startswith("AspnType")
             else "->"
         )
-        match field_type_name:
-            case "Aspn23MessageType":
-                pass
-            case "char*":
-                self.current_struct.function_from_prep_buf.append(
-                    f"""lcm_msg{get}{field_name} = malloc(7 * sizeof(char));
-                    memcpy(lcm_msg{get}{field_name}, \"abcdef\", 7);"""
-                )
+        if field_type_name == f"{ASPN_PREFIX}MessageType":
+            pass
+        elif field_type_name == "char*":
+            self.current_struct.function_from_prep_buf.append(
+                f"""lcm_msg{get}{field_name} = malloc(7 * sizeof(char));
+                memcpy(lcm_msg{get}{field_name}, \"abcdef\", 7);"""
+            )
+            self.current_struct.function_to_prep_buf.append(
+                f"""aspn{get}{field_name} = malloc(7 * sizeof(char));
+                memcpy(aspn{get}{field_name}, \"abcdef\", 7);"""
+            )
+            self.current_struct.function_test_buf.append(
+                f"g_assert_cmpstr(lcm_msg->{field_name}, ==, aspn->{field_name});"
+            )
+            self.current_struct.function_free_buf.append(
+                f"free(lcm_msg->{field_name});"
+            )
+        elif field_type_name == "bool":
+            self.current_struct.function_from_prep_buf.append(
+                f"lcm_msg{get}{field_name} = {random.randint(0, 1)};"
+            )
+            self.current_struct.function_to_prep_buf.append(
+                f"aspn{get}{field_name} = {random.randint(0, 1)};"
+            )
+            self.current_struct.function_test_buf.append(
+                f"g_assert_cmpint(lcm_msg->{field_name}, ==, aspn->{field_name});"
+            )
+        elif field_type_name in ["double", "float"]:
+            self.current_struct.function_from_prep_buf.append(
+                f"lcm_msg{get}{field_name} = {random.uniform(0, 5)};"
+            )
+            self.current_struct.function_to_prep_buf.append(
+                f"aspn{get}{field_name} = {random.uniform(0, 5)};"
+            )
+            self.current_struct.function_test_buf.append(
+                f"g_assert_cmpfloat(lcm_msg->{field_name}, ==, aspn->{field_name});"
+            )
+        elif field_type_name in [
+            "uint8_t",
+            "uint16_t",
+            "uint32_t",
+            "uint64_t",
+            "int8_t",
+            "int16_t",
+            "int32_t",
+            "int64_t",
+        ]:
+            self.current_struct.function_from_prep_buf.append(
+                f"lcm_msg{get}{field_name} = {random.randint(1, 5)};"
+            )
+            self.current_struct.function_to_prep_buf.append(
+                f"aspn{get}{field_name} = {random.randint(1, 5)};"
+            )
+            self.current_struct.function_test_buf.append(
+                f"g_assert_cmpint(lcm_msg->{field_name}, ==, aspn->{field_name});"
+            )
+        else:
+            no_alloc_types = [
+                f"{ASPN_PREFIX}TypeIntegrity",
+                f"{ASPN_PREFIX}TypeSatnavSatelliteSystem",
+                f"{ASPN_PREFIX}TypeSatnavSignalDescriptor",
+                f"{ASPN_PREFIX}TypeHeader",
+                f"{ASPN_PREFIX}TypeKeplerOrbit",
+                f"{ASPN_PREFIX}TypeMounting",
+                f"{ASPN_PREFIX}TypeSatnavClock",
+                f"{ASPN_PREFIX}TypeSatnavTime",
+                f"{ASPN_PREFIX}TypeTimestamp",
+                f"{ASPN_PREFIX}TypeSatnavSvData",
+            ]
+            self.current_struct.function_from_prep_buf.append(
+                f"lcm_msg{get}{field_name} = create_basic_{self.get_lcm_type_name(field_type_name)}();"
+            )
+            if field_name == "observation_characteristics":
                 self.current_struct.function_to_prep_buf.append(
-                    f"""aspn{get}{field_name} = malloc(7 * sizeof(char));
-                    memcpy(aspn{get}{field_name}, \"abcdef\", 7);"""
+                    f"""if (aspn{get}has_observation_characteristics) {{
+                        aspn{get}{field_name} = create_basic_{self.remove_aspn_version(field_type_name)}();
+                    }}"""
                 )
                 self.current_struct.function_test_buf.append(
-                    f"g_assert_cmpstr(lcm_msg->{field_name}, ==, aspn->{field_name});"
+                    f"""if (lcm_msg->has_observation_characteristics) {{
+                        test_marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});
+                    }}"""
                 )
+            else:
+                self.current_struct.function_to_prep_buf.append(
+                    f"aspn{get}{field_name} = create_basic_{self.remove_aspn_version(field_type_name)}();"
+                )
+                self.current_struct.function_test_buf.append(
+                    f"test_marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});"
+                )
+            if field_type_name not in no_alloc_types:
                 self.current_struct.function_free_buf.append(
-                    f"free(lcm_msg->{field_name});"
+                    f"free_basic_{self.get_lcm_type_name(field_type_name)}(&lcm_msg->{field_name});"
                 )
-            case "bool":
-                self.current_struct.function_from_prep_buf.append(
-                    f"lcm_msg{get}{field_name} = {random.randint(0, 1)};"
-                )
-                self.current_struct.function_to_prep_buf.append(
-                    f"aspn{get}{field_name} = {random.randint(0, 1)};"
-                )
-                self.current_struct.function_test_buf.append(
-                    f"g_assert_cmpint(lcm_msg->{field_name}, ==, aspn->{field_name});"
-                )
-            case "double" | "float":
-                self.current_struct.function_from_prep_buf.append(
-                    f"lcm_msg{get}{field_name} = {random.uniform(0, 5)};"
-                )
-                self.current_struct.function_to_prep_buf.append(
-                    f"aspn{get}{field_name} = {random.uniform(0, 5)};"
-                )
-                self.current_struct.function_test_buf.append(
-                    f"g_assert_cmpfloat(lcm_msg->{field_name}, ==, aspn->{field_name});"
-                )
-            case (
-                "uint8_t"
-                | "uint16_t"
-                | "uint32_t"
-                | "uint64_t"
-                | "int8_t"
-                | "int16_t"
-                | "int32_t"
-                | "int64_t"
-            ):
-                self.current_struct.function_from_prep_buf.append(
-                    f"lcm_msg{get}{field_name} = {random.randint(1, 5)};"
-                )
-                self.current_struct.function_to_prep_buf.append(
-                    f"aspn{get}{field_name} = {random.randint(1, 5)};"
-                )
-                self.current_struct.function_test_buf.append(
-                    f"g_assert_cmpint(lcm_msg->{field_name}, ==, aspn->{field_name});"
-                )
-            case _:
-                no_alloc_types = [
-                    "Aspn23TypeIntegrity",
-                    "Aspn23TypeSatnavSatelliteSystem",
-                    "Aspn23TypeSatnavSignalDescriptor",
-                    "Aspn23TypeHeader",
-                    "Aspn23TypeKeplerOrbit",
-                    "Aspn23TypeMounting",
-                    "Aspn23TypeSatnavClock",
-                    "Aspn23TypeSatnavTime",
-                    "Aspn23TypeTimestamp",
-                    "Aspn23TypeSatnavSvData",
-                ]
-                self.current_struct.function_from_prep_buf.append(
-                    f"lcm_msg{get}{field_name} = create_basic_{self.get_lcm_type_name(field_type_name)}();"
-                )
-                if field_name == "observation_characteristics":
-                    self.current_struct.function_to_prep_buf.append(
-                        f"""if (aspn{get}has_observation_characteristics) {{
-                            aspn{get}{field_name} = create_basic_{self.remove_aspn_version(field_type_name)}();
-                        }}"""
-                    )
-                    self.current_struct.function_test_buf.append(
-                        f"""if (lcm_msg->has_observation_characteristics) {{
-                            test_marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});
-                        }}"""
-                    )
-                else:
-                    self.current_struct.function_to_prep_buf.append(
-                        f"aspn{get}{field_name} = create_basic_{self.remove_aspn_version(field_type_name)}();"
-                    )
-                    self.current_struct.function_test_buf.append(
-                        f"test_marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});"
-                    )
-                if field_type_name not in no_alloc_types:
-                    self.current_struct.function_free_buf.append(
-                        f"free_basic_{self.get_lcm_type_name(field_type_name)}(&lcm_msg->{field_name});"
-                    )
 
     def process_inheritance_field(
         self,

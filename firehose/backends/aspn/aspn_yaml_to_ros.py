@@ -3,6 +3,7 @@ from firehose.backends.aspn.utils import (
     format_and_write_to_file,
     format_docstring,
     snake_to_pascal,
+    ASPN_PREFIX_LOWER,
 )
 from glob import glob
 from os import makedirs, remove
@@ -61,7 +62,7 @@ class AspnYamlToROS(Backend):
         format_and_write_to_file(
             dedent(f"""\
                 cmake_minimum_required(VERSION 3.8)
-                project(aspn23_ros_interfaces)
+                project({ASPN_PREFIX_LOWER}_ros_interfaces)
 
                 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
                   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -71,7 +72,7 @@ class AspnYamlToROS(Backend):
                 find_package(ament_cmake REQUIRED)
                 find_package(rosidl_default_generators REQUIRED)
 
-                rosidl_generate_interfaces(aspn23_ros_interfaces
+                rosidl_generate_interfaces({ASPN_PREFIX_LOWER}_ros_interfaces
                   {{msg_names}}
                 )
 

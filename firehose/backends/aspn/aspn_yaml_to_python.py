@@ -8,7 +8,7 @@ import numpy as np
 
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
-    ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
     INDENT,
     char_limit_docstr,
     format_and_write_py_file,
@@ -18,7 +18,7 @@ from firehose.backends.aspn.utils import (
     snake_to_pascal,
 )
 
-ASPN_MODULE = ASPN_PREFIX.lower()
+ASPN_MODULE = ASPN_PREFIX_LOWER
 
 
 class Struct:

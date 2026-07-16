@@ -5,13 +5,13 @@ from typing import List, Union
 from firehose.backends import Backend
 
 from firehose.backends.aspn.utils import (
-    ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
+    ASPN_PREFIX_UPPER,
     format_and_write_dds_file,
     snake_to_pascal,
 )
 
-ASPN_PREFIX_LOWER = ASPN_PREFIX.lower()
-PLACEHOLDER = "ASPN23_PLACEHOLDER"
+PLACEHOLDER = f"{ASPN_PREFIX_UPPER}_PLACEHOLDER"
 
 
 class Struct:

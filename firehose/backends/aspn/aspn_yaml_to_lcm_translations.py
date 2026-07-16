@@ -5,7 +5,7 @@ from typing import List, Union
 
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
-    ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
     INDENT,
     format_and_write_to_file,
     is_length_field,
@@ -13,7 +13,7 @@ from firehose.backends.aspn.utils import (
     snake_to_pascal,
 )
 
-ASPN_MODULE = ASPN_PREFIX.lower()
+ASPN_MODULE = ASPN_PREFIX_LOWER
 
 
 class Struct:
@@ -92,11 +92,11 @@ class AspnYamlToLCMTranslations(Backend):
             # the "to LCM" structs (see above)
             snake_name = pascal_to_snake(s.struct_name)
             imports_aspn.append(
-                f"from aspn23.{snake_name} import {s.struct_name}"
+                f"from {ASPN_PREFIX_LOWER}.{snake_name} import {s.struct_name}"
             )
             imports_aspn.extend(s.imports_aspn)
             imports_lcm.append(
-                f"from aspn23_lcm.{snake_name} import {snake_name} as Lcm{s.struct_name}"
+                f"from {ASPN_PREFIX_LOWER}_lcm.{snake_name} import {snake_name} as Lcm{s.struct_name}"
             )
             exports.append(f"lcm_to_{snake_name} as lcm_to_{snake_name}")
             exports.append(f"{snake_name}_to_lcm as {snake_name}_to_lcm")
@@ -368,9 +368,7 @@ class AspnYamlToLCMTranslations(Backend):
         else:
             struct_name = pascal_to_snake(self.current_struct.struct_name)
             field_type_name = f"{self.current_struct.struct_name}{snake_to_pascal(field_type_name)}"
-            import_string = (
-                f"from aspn23.{struct_name} import {field_type_name}"
-            )
+            import_string = f"from {ASPN_PREFIX_LOWER}.{struct_name} import {field_type_name}"
             if import_string not in self.current_struct.imports_aspn:
                 self.current_struct.imports_aspn.append(import_string)
             self.current_struct.assignments.append(

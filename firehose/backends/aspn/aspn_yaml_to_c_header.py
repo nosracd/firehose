@@ -7,6 +7,7 @@ from firehose.backends.aspn.utils import (
     ASPN_NULLABILITY_MACRO_START,
     ASPN_NULLABLE_MACRO,
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
     INDENT,
     format_and_write_to_file,
     format_c_codegen_array,
@@ -20,7 +21,7 @@ class Struct:
         self.constructor_param_buf: List[str] = []
         self.enum_defs_buf: List[str] = []
         self.fn_basename: str = (
-            f"{ASPN_PREFIX}_{snake_case_struct_name}".lower()
+            f"{ASPN_PREFIX_LOWER}_{snake_case_struct_name}".lower()
         )
         self.includes: List[str] = []
         self.struct_docstr: str = "<Missing C Docstring>"

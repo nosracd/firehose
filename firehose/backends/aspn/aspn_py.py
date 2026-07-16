@@ -3,9 +3,7 @@ from os.path import join
 from typing import List, Tuple, Union, Dict, Set
 from ..backend import Backend
 from .aspn_yaml_to_python import AspnYamlToPython
-from .utils import ASPN_PREFIX
-
-ASPN_DIR = ASPN_PREFIX.lower()
+from .utils import ASPN_PREFIX_LOWER
 
 
 class AspnPyBackend(Backend):
@@ -16,7 +14,7 @@ class AspnPyBackend(Backend):
         rmtree(self.output_folder, ignore_errors=True)
 
     def set_output_root_folder(self, output_root_folder: str):
-        self.output_folder = join(output_root_folder, 'src', ASPN_DIR)
+        self.output_folder = join(output_root_folder, 'src', ASPN_PREFIX_LOWER)
         self._remove_existing_output_files()
         for generator in self.generators:
             generator.set_output_root_folder(self.output_folder)

@@ -5,6 +5,8 @@ from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     format_and_write_to_file,
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
+    ASPN_PREFIX_UPPER,
     snake_to_pascal,
     pascal_to_snake,
 )
@@ -19,7 +21,9 @@ class Struct:
         self.struct_name_versioned: str = (
             f"{ASPN_PREFIX}{snake_to_pascal(snake_case_struct_name)}"
         )
-        self.struct_name_lcm: str = f"aspn23_lcm_{snake_case_struct_name}"
+        self.struct_name_lcm: str = (
+            f"{ASPN_PREFIX_LOWER}_lcm_{snake_case_struct_name}"
+        )
         self.struct_enum: str = f"ASPN_{snake_case_struct_name}".upper()
         self.fn_basename: str = f"aspn_{snake_case_struct_name}".lower()
         self.function_assign_buf: List[str] = []
@@ -46,7 +50,7 @@ class AspnYamlToMarshalCToLCMSource(Backend):
 
     def generate(self) -> None:
         self.structs += [self.current_struct]
-        c_file_contents = """/*
+        c_file_contents = f"""/*
          * This code is generated via firehose.
          * DO NOT hand edit code.  Make any changes required using the firehose repo instead
          */
@@ -55,46 +59,46 @@ class AspnYamlToMarshalCToLCMSource(Backend):
         #include <utils/conversions.h>
         #include <utils/get_time.h>
 
-        static double** unflatten_covariance(double* flat_covariance, size_t length) {
+        static double** unflatten_covariance(double* flat_covariance, size_t length) {{
             if (flat_covariance == NULL || length == 0) return NULL;
             double** out = (double**)malloc(length * sizeof(double*));
-            for (size_t row = 0; row < length; ++row) {
+            for (size_t row = 0; row < length; ++row) {{
                 out[row] = (double*)malloc(length * sizeof(double));
-                for (size_t col = 0; col < length; ++col) {
+                for (size_t col = 0; col < length; ++col) {{
                     out[row][col] = flat_covariance[row * length + col];
-                }
-            }
+                }}
+            }}
             return out;
-        }
+        }}
 
-        static void marshal_Aspn23TypeHeader(aspn23_lcm_type_header* lcm_msg, const AspnTypeHeader* aspn) {
+        static void marshal_{ASPN_PREFIX}TypeHeader({ASPN_PREFIX_LOWER}_lcm_type_header* lcm_msg, const AspnTypeHeader* aspn) {{
             lcm_msg->vendor_id   = aspn->vendor_id;
             lcm_msg->device_id   = aspn->device_id;
             lcm_msg->context_id  = aspn->context_id;
             lcm_msg->sequence_id = aspn->sequence_id;
-        }
+        }}
 
-        static void marshal_Aspn23TypeMetadataheader(aspn23_lcm_type_metadataheader* lcm_msg, const AspnTypeMetadataheader* aspn) {
-            marshal_Aspn23TypeHeader(&lcm_msg->header, &aspn->header);
-            if (aspn->sensor_description != NULL) {
+        static void marshal_{ASPN_PREFIX}TypeMetadataheader({ASPN_PREFIX_LOWER}_lcm_type_metadataheader* lcm_msg, const AspnTypeMetadataheader* aspn) {{
+            marshal_{ASPN_PREFIX}TypeHeader(&lcm_msg->header, &aspn->header);
+            if (aspn->sensor_description != NULL) {{
                 size_t len = strlen(aspn->sensor_description) + 1;
                 lcm_msg->sensor_description = calloc(len, sizeof(char));
                 memcpy(lcm_msg->sensor_description, aspn->sensor_description, len);
-            }
+            }}
             lcm_msg->delta_t_nom         = aspn->delta_t_nom;
             lcm_msg->timestamp_clock_id  = aspn->timestamp_clock_id;
             lcm_msg->digits_of_precision = aspn->digits_of_precision;
-        }
+        }}
 
-        static aspn23_lcm_type_integrity* marshal_Aspn23TypeIntegrity(AspnTypeIntegrity* integrity, size_t length) {
+        static {ASPN_PREFIX_LOWER}_lcm_type_integrity* marshal_{ASPN_PREFIX}TypeIntegrity(AspnTypeIntegrity* integrity, size_t length) {{
             if (integrity == NULL || length == 0) return NULL;
-            aspn23_lcm_type_integrity* out = calloc(length, sizeof(aspn23_lcm_type_integrity));
-            for (size_t ii = 0; ii < length; ii++) {
+            {ASPN_PREFIX_LOWER}_lcm_type_integrity* out = calloc(length, sizeof({ASPN_PREFIX_LOWER}_lcm_type_integrity));
+            for (size_t ii = 0; ii < length; ii++) {{
                 out[ii].integrity_method = integrity[ii].integrity_method;
                 out[ii].integrity_value  = integrity[ii].integrity_value;
-            }
+            }}
             return out;
-        }
+        }}
 
         """
         for struct in self.structs:
@@ -111,20 +115,18 @@ class AspnYamlToMarshalCToLCMSource(Backend):
 
     # Helper Functions #
     def remove_aspn_prefix(self, type_name: str):
-        return type_name.replace("Aspn23", "")
+        return type_name.replace(ASPN_PREFIX, "")
 
     def remove_aspn_version(self, type_name: str):
-        if "aspn23" in type_name:
-            return type_name.replace("aspn23", "aspn")
-        if "Aspn23" in type_name:
-            return type_name.replace("Aspn23", "Aspn")
-        if "ASPN23" in type_name:
-            return type_name.replace("ASPN23", "ASPN")
+        if ASPN_PREFIX_LOWER in type_name:
+            return type_name.replace(ASPN_PREFIX_LOWER, "aspn")
+        if ASPN_PREFIX in type_name:
+            return type_name.replace(ASPN_PREFIX, "Aspn")
+        if ASPN_PREFIX_UPPER in type_name:
+            return type_name.replace(ASPN_PREFIX_UPPER, "ASPN")
 
     def get_lcm_type_name(self, type_name: str):
-        return (
-            f"aspn23_lcm_{pascal_to_snake(self.remove_aspn_prefix(type_name))}"
-        )
+        return f"{ASPN_PREFIX_LOWER}_lcm_{pascal_to_snake(self.remove_aspn_prefix(type_name))}"
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # Backend Methods # # # # # # # # # # # # # # #
@@ -162,49 +164,48 @@ class AspnYamlToMarshalCToLCMSource(Backend):
         else:
             length = data_len
             assign = f"memcpy(lcm_msg->{field_name}, aspn->{field_name}, {length} * sizeof({type_name}));"
-        match type_name:
-            case "Aspn23TypeIntegrity":
-                self.current_struct.function_assign_buf.append(
-                    f"lcm_msg->integrity = marshal_{type_name}(aspn->integrity, aspn->num_integrity);"
-                )
-            case "uint8_t":
-                # self.current_struct.function_assign_buf.append(assign)
-                if (
-                    field_name == "clock_id"
-                    or field_name == "descriptor"
-                    or field_name == "image_data"
-                ):
-                    self.current_struct.function_assign_buf.append(
-                        f"""if (aspn->{field_name} != NULL && {length} != 0) {{
-                            lcm_msg->{field_name} = calloc({length}, sizeof(int16_t));
-                            for (size_t ii = 0; ii < {length}; ii++) {{
-                                lcm_msg->{field_name}[ii] = aspn->{field_name}[ii];
-                            }}
-                        }}"""
-                    )
-                else:
-                    self.current_struct.function_assign_buf.append(assign)
-            case (
-                "char*"
-                | "bool"
-                | "double"
-                | "float"
-                | "uint16_t"
-                | "uint32_t"
-                | "uint64_t"
-                | "int8_t"
-                | "int16_t"
-                | "int32_t"
-                | "int64_t"
+        if type_name == f"{ASPN_PREFIX}TypeIntegrity":
+            self.current_struct.function_assign_buf.append(
+                f"lcm_msg->integrity = marshal_{type_name}(aspn->integrity, aspn->num_integrity);"
+            )
+        elif type_name == "uint8_t":
+            # self.current_struct.function_assign_buf.append(assign)
+            if (
+                field_name == "clock_id"
+                or field_name == "descriptor"
+                or field_name == "image_data"
             ):
-                self.current_struct.function_assign_buf.append(assign)
-            case _:
                 self.current_struct.function_assign_buf.append(
-                    f"""lcm_msg->{field_name} = calloc({length}, sizeof({self.get_lcm_type_name(type_name)}));
-                    for (uint32_t ii = 0; ii < {length}; ii++) {{
-                        marshal_{type_name}(&lcm_msg->{field_name}[ii], &aspn->{field_name}[ii]);
+                    f"""if (aspn->{field_name} != NULL && {length} != 0) {{
+                        lcm_msg->{field_name} = calloc({length}, sizeof(int16_t));
+                        for (size_t ii = 0; ii < {length}; ii++) {{
+                            lcm_msg->{field_name}[ii] = aspn->{field_name}[ii];
+                        }}
                     }}"""
                 )
+            else:
+                self.current_struct.function_assign_buf.append(assign)
+        elif type_name in [
+            "char*",
+            "bool",
+            "double",
+            "float",
+            "uint16_t",
+            "uint32_t",
+            "uint64_t",
+            "int8_t",
+            "int16_t",
+            "int32_t",
+            "int64_t",
+        ]:
+            self.current_struct.function_assign_buf.append(assign)
+        else:
+            self.current_struct.function_assign_buf.append(
+                f"""lcm_msg->{field_name} = calloc({length}, sizeof({self.get_lcm_type_name(type_name)}));
+                for (uint32_t ii = 0; ii < {length}; ii++) {{
+                    marshal_{type_name}(&lcm_msg->{field_name}[ii], &aspn->{field_name}[ii]);
+                }}"""
+            )
 
     def process_matrix_field(
         self,
@@ -268,34 +269,33 @@ class AspnYamlToMarshalCToLCMSource(Backend):
         doc_string: str,
         nullable: bool = False,
     ):
-        match field_type_name:
-            case "Aspn23TypeImageFeature":
-                self.current_struct.function_assign_buf.append(
-                    f"""if (aspn->has_observation_characteristics) {{
-                        marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});
-                        }}"""
-                )
-            case (
-                "char*"
-                | "bool"
-                | "double"
-                | "float"
-                | "uint8_t"
-                | "uint16_t"
-                | "uint32_t"
-                | "uint64_t"
-                | "int8_t"
-                | "int16_t"
-                | "int32_t"
-                | "int64_t"
-            ):
-                self.current_struct.function_assign_buf.append(
-                    f"lcm_msg->{field_name} = aspn->{field_name};"
-                )
-            case _:
-                self.current_struct.function_assign_buf.append(
-                    f"marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});"
-                )
+        if field_type_name == f"{ASPN_PREFIX}TypeImageFeature":
+            self.current_struct.function_assign_buf.append(
+                f"""if (aspn->has_observation_characteristics) {{
+                    marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});
+                    }}"""
+            )
+        elif field_type_name in [
+            "char*",
+            "bool",
+            "double",
+            "float",
+            "uint8_t",
+            "uint16_t",
+            "uint32_t",
+            "uint64_t",
+            "int8_t",
+            "int16_t",
+            "int32_t",
+            "int64_t",
+        ]:
+            self.current_struct.function_assign_buf.append(
+                f"lcm_msg->{field_name} = aspn->{field_name};"
+            )
+        else:
+            self.current_struct.function_assign_buf.append(
+                f"marshal_{field_type_name}(&lcm_msg->{field_name}, &aspn->{field_name});"
+            )
 
     def process_inheritance_field(
         self,

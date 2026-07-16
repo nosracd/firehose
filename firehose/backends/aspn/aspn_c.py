@@ -12,13 +12,17 @@ from .utils import (
     ASPN_NULLABILITY_MACRO_START,
     ASPN_NULLABLE_MACRO,
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
+    ASPN_PREFIX_UNVERSIONED,
+    ASPN_PREFIX_UNVERSIONED_UPPER,
+    ASPN_PREFIX_UNVERSIONED_LOWER,
+    ASPN_PREFIX_UPPER,
     format_and_write_to_file,
     name_to_enum_value,
     snake_to_pascal,
 )
 
-ASPN_DIR = ASPN_PREFIX.lower()
-ASPN_PREFIX_LOWER = ASPN_PREFIX.lower()
+ASPN_DIR = ASPN_PREFIX_LOWER
 
 
 class AspnCBackend(Backend):
@@ -57,7 +61,7 @@ class AspnCBackend(Backend):
             {headers}
             ]
 
-            install_headers(aspn_headers, subdir: 'aspn23')
+            install_headers(aspn_headers, subdir: '{aspn_lower}')
 
             aspn_c_inc_dir = include_directories('src')
 
@@ -87,11 +91,11 @@ class AspnCBackend(Backend):
 
                 foreach source : aspn_sources
                     header = source.replace('.c', '.h')
-                    install_headers(header, install_dir: get_option('includedir') + '/aspn23')
+                    install_headers(header, install_dir: get_option('includedir') + '/{aspn_lower}')
                 endforeach
-                install_headers('src/aspn23/aspn.h', install_dir: get_option('includedir') + '/aspn23')
-                install_headers('src/aspn23/common.h', install_dir: get_option('includedir') + '/aspn23')
-                install_headers('src/aspn23/messages_and_types.h', install_dir: get_option('includedir') + '/aspn23')
+                install_headers('src/{aspn_lower}/aspn.h', install_dir: get_option('includedir') + '/{aspn_lower}')
+                install_headers('src/{aspn_lower}/common.h', install_dir: get_option('includedir') + '/{aspn_lower}')
+                install_headers('src/{aspn_lower}/messages_and_types.h', install_dir: get_option('includedir') + '/{aspn_lower}')
 
                 aspn_runtime_types = [
                 {types}
@@ -99,12 +103,12 @@ class AspnCBackend(Backend):
 
                 pkg = import('pkgconfig')
                 pkg.generate(aspn_c_libs,
-                    name: 'aspn23',
+                    name: '{aspn_lower}',
                     description: 'ASPN c',
                     unescaped_variables: 'aspn_runtime_types=' + ' '.join(aspn_runtime_types),
                     version: meson.project_version())
 
-                meson.override_dependency('aspn23', aspn_c_dep)
+                meson.override_dependency('{aspn_lower}', aspn_c_dep)
 
             else # get_option('aspn-c-main-library')
 
@@ -121,15 +125,18 @@ class AspnCBackend(Backend):
         headers = [
             source.replace('.c', '.h') for source in self.all_source_files
         ]
-        headers.insert(0, '    \'src/aspn23/messages_and_types.h\',')
-        headers.insert(0, '    \'src/aspn23/common.h\',')
-        headers.insert(0, '    \'src/aspn23/aspn.h\',')
+        headers.insert(
+            0, f'    \'src/{ASPN_PREFIX_LOWER}/messages_and_types.h\','
+        )
+        headers.insert(0, f'    \'src/{ASPN_PREFIX_LOWER}/common.h\',')
+        headers.insert(0, f'    \'src/{ASPN_PREFIX_LOWER}/aspn.h\',')
 
         meson_build = meson_build_template.format(
             sources='\n'.join(self.all_source_files),
             headers='\n'.join(headers),
             types=types_meson,
             ASPN_DIR=ASPN_DIR,
+            aspn_lower=ASPN_PREFIX_LOWER,
         )
         meson_build_filename = self.output_folder.replace(
             f'/src/{ASPN_DIR}', '/meson.build'
@@ -152,7 +159,7 @@ class AspnCBackend(Backend):
             #endif
 
             #include "types.h"
-            typedef enum Aspn23MessageType AspnMessageType;
+            typedef enum {ASPN_PREFIX}MessageType AspnMessageType;
             #define aspn_free {ASPN_PREFIX_LOWER}_free
             #define aspn_runtime_type_get_name {ASPN_PREFIX_LOWER}_runtime_type_get_name
 
@@ -250,7 +257,7 @@ class AspnCBackend(Backend):
                 {aspn_type_get_time_cases}
                 default: {{
                     printf("{ASPN_PREFIX_LOWER}_get_time: cannot get time from message of type %i\\n", base->message_type);
-                    Aspn23TypeTimestamp out = {{0}};
+                    {ASPN_PREFIX}TypeTimestamp out = {{0}};
                     return out;
                 }}
                 }}
@@ -533,7 +540,9 @@ class AspnCBackend(Backend):
         enums.sort()
         all_aliases = ''
         for enum in enums:
-            version_agnostic_enum = enum.replace(ASPN_PREFIX, 'Aspn')
+            version_agnostic_enum = enum.replace(
+                ASPN_PREFIX, ASPN_PREFIX_UNVERSIONED
+            )
             all_aliases += f'typedef enum {enum} {version_agnostic_enum};\n'
         return all_aliases
 
@@ -563,7 +572,9 @@ class AspnCBackend(Backend):
             or self.struct_name.startswith('metadata')
             or self.struct_name == 'image'
         ):
-            current_type = 'ASPN_' + struct_name.upper()
+            current_type = (
+                f'{ASPN_PREFIX_UNVERSIONED_UPPER}_' + struct_name.upper()
+            )
             self.all_types_enum += [current_type]
 
             function_name = self.struct_name.lower()
@@ -576,7 +587,7 @@ class AspnCBackend(Backend):
 
             self.type_string_cases += f"""
             case {current_type}:
-                return "{ASPN_PREFIX.upper()}_{self.struct_name.upper()}";
+                return "{ASPN_PREFIX_UPPER}_{self.struct_name.upper()}";
             """
 
             self.aspn_type_get_time_cases += f"""
@@ -751,7 +762,9 @@ class AspnCBackend(Backend):
         enum_name = name_to_enum_value(self, field_name)
         for value in enum_values:
             value = value.split(' ')[0]
-            unversioned_value = value.replace(ASPN_PREFIX.upper(), 'ASPN')
+            unversioned_value = value.replace(
+                ASPN_PREFIX_UPPER, ASPN_PREFIX_UNVERSIONED_UPPER
+            )
             self.all_aliases += f'#define {unversioned_value} {value}\n'
         self.enums_in_current_struct += [enum_name]
         self.c_source_generator.process_enum(

@@ -5,7 +5,13 @@ from enum import Enum
 from os.path import splitext
 from typing import List
 
-ASPN_PREFIX = "Aspn23"
+ASPN_VERSION = '23'
+ASPN_PREFIX_UNVERSIONED = "Aspn"
+ASPN_PREFIX_UNVERSIONED_UPPER = ASPN_PREFIX_UNVERSIONED.upper()
+ASPN_PREFIX_UNVERSIONED_LOWER = ASPN_PREFIX_UNVERSIONED.lower()
+ASPN_PREFIX = ASPN_PREFIX_UNVERSIONED + ASPN_VERSION
+ASPN_PREFIX_LOWER = ASPN_PREFIX_UNVERSIONED_LOWER + ASPN_VERSION
+ASPN_PREFIX_UPPER = ASPN_PREFIX_UNVERSIONED_UPPER + ASPN_VERSION
 ASPN_NULLABILITY_MACRO_START = 'ASPN_ASSUME_NONNULL_BEGIN'
 ASPN_NULLABILITY_MACRO_END = 'ASPN_ASSUME_NONNULL_END'
 ASPN_NULLABLE_MACRO = 'ASPN_NULLABLE'
@@ -232,7 +238,7 @@ def name_to_enum_field(
         # MR that that fixes this issue
         if '_' not in struct_name:
             struct_name = f"{pascal_to_snake(struct_name, True)}"
-        return f"{ASPN_PREFIX}_{struct_name}_{enum_name}_{enum_field}".upper()
+        return f"{ASPN_PREFIX_UPPER}_{struct_name}_{enum_name}_{enum_field}".upper()
 
 
 def name_to_enum_value(codegen_instance, enum_name: str) -> str:

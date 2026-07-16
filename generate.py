@@ -10,6 +10,9 @@ from typing import Dict, List
 from glob import glob
 from os.path import join
 import inspect
+from importlib import import_module
+
+from firehose.backends.aspn.utils import ASPN_PREFIX_LOWER
 
 FIREMAN = r"""
 
@@ -450,9 +453,9 @@ def _write_fingerprints(classes, struct_type: str, file) -> None:
 
 def _generate_lcm_fingerprint_table(output_dir: str) -> None:
     sys.path.append(output_dir)
-    import aspn23_lcm
+    aspn_lcm = import_module(f'{ASPN_PREFIX_LOWER}_lcm')
 
-    classes = inspect.getmembers(aspn23_lcm, inspect.isclass)
+    classes = inspect.getmembers(aspn_lcm, inspect.isclass)
     with open(join(output_dir, 'fingerprints.md'), 'w') as file:
         file.write('# ASPN-LCM (Python) Fingerprints\n')
         file.write('\n## Measurements\n\n')
@@ -660,7 +663,9 @@ def create_targets(args: argparse.Namespace) -> None:
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=[
                 "-d",
-                join(args.output_dir, "dds", "idl", "aspn23_dds"),
+                join(
+                    args.output_dir, "dds", "idl", f"{ASPN_PREFIX_LOWER}_dds"
+                ),
                 "-o",
                 "dds",
             ],
@@ -672,8 +677,8 @@ def create_targets(args: argparse.Namespace) -> None:
                 "-d",
                 join(
                     args.output_dir,
-                    "aspn23_lcm_conversions",
-                    "aspn23_lcm_conversions",
+                    f"{ASPN_PREFIX_LOWER}_lcm_conversions",
+                    f"{ASPN_PREFIX_LOWER}_lcm_conversions",
                 ),
                 "-o",
                 "lcmtranslations",
@@ -700,9 +705,13 @@ def create_targets(args: argparse.Namespace) -> None:
             runner=FASTDDS_RUNNER,
             cmd_args=[
                 "--idl_dir",
-                join(args.output_dir, "dds", "idl", "aspn23_dds"),
+                join(
+                    args.output_dir, "dds", "idl", f"{ASPN_PREFIX_LOWER}_dds"
+                ),
                 "--cpp_dir",
-                join(args.output_dir, "dds", "cpp", "aspn23_dds"),
+                join(
+                    args.output_dir, "dds", "cpp", f"{ASPN_PREFIX_LOWER}_dds"
+                ),
             ],
             dependencies=["aspn_dds_idl"],
         ),
@@ -712,7 +721,10 @@ def create_targets(args: argparse.Namespace) -> None:
             cmd_args=[
                 "-d",
                 join(
-                    args.output_dir, "aspn-ros", "src", "aspn23_ros_interfaces"
+                    args.output_dir,
+                    "aspn-ros",
+                    "src",
+                    f"{ASPN_PREFIX_LOWER}_ros_interfaces",
                 ),
                 "-o",
                 "ros",
@@ -727,8 +739,8 @@ def create_targets(args: argparse.Namespace) -> None:
                     args.output_dir,
                     "aspn-ros",
                     "src",
-                    "aspn23_ros_utils",
-                    "aspn23_ros_utils",
+                    f"{ASPN_PREFIX_LOWER}_ros_utils",
+                    f"{ASPN_PREFIX_LOWER}_ros_utils",
                 ),
                 "-o",
                 "ros_translations",

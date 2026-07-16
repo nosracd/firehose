@@ -7,7 +7,15 @@ from ..backend import Backend
 from .aspn_yaml_to_marshal_lcm_to_c_source import AspnYamlToMarshalLCMToCSource
 from .aspn_yaml_to_marshal_c_to_lcm_source import AspnYamlToMarshalCToLCMSource
 from .aspn_yaml_to_test_marshal_aspn23 import AspnYamlToTestMarshalAspn23
-from .utils import ASPN_PREFIX, format_and_write_to_file, snake_to_pascal
+from .utils import (
+    ASPN_PREFIX,
+    ASPN_PREFIX_UNVERSIONED,
+    ASPN_PREFIX_LOWER,
+    ASPN_PREFIX_UNVERSIONED_UPPER,
+    ASPN_PREFIX_UNVERSIONED_LOWER,
+    format_and_write_to_file,
+    snake_to_pascal,
+)
 
 MARSHAL_LCM_C_DIR = "marshal_lcm_c"
 
@@ -16,14 +24,20 @@ class Struct:
     def __init__(self, snake_case_struct_name: str):
         self.struct_docstr: str = "<Missing C Docstring>"
         self.struct_name: str = (
-            f"Aspn{snake_to_pascal(snake_case_struct_name)}"
+            f"{ASPN_PREFIX_UNVERSIONED}{snake_to_pascal(snake_case_struct_name)}"
         )
         self.struct_name_versioned: str = (
             f"{ASPN_PREFIX}{snake_to_pascal(snake_case_struct_name)}"
         )
-        self.struct_name_lcm: str = f"aspn23_lcm_{snake_case_struct_name}"
-        self.struct_enum: str = f"ASPN_{snake_case_struct_name}".upper()
-        self.fn_basename: str = f"aspn_{snake_case_struct_name}".lower()
+        self.struct_name_lcm: str = (
+            f"{ASPN_PREFIX_LOWER}_lcm_{snake_case_struct_name}"
+        )
+        self.struct_enum: str = (
+            f"{ASPN_PREFIX_UNVERSIONED_UPPER}_{snake_case_struct_name}".upper()
+        )
+        self.fn_basename: str = (
+            f"{ASPN_PREFIX_UNVERSIONED_LOWER}_{snake_case_struct_name}".lower()
+        )
         self.include_template = dedent(
             f"""#include <{self.struct_name_lcm}.h>\n"""
         )
@@ -111,9 +125,9 @@ class AspnCMarshalingBackend(Backend):
         functions_buf = ""
         for struct in self.header_structs:
             if struct.struct_name not in [
-                "AspnTypeIntegrity",
-                "AspnTypeHeader",
-                "AspnTypeMetadataheader",
+                f"{ASPN_PREFIX_UNVERSIONED}TypeIntegrity",
+                f"{ASPN_PREFIX_UNVERSIONED}TypeHeader",
+                f"{ASPN_PREFIX_UNVERSIONED}TypeMetadataheader",
             ]:
                 includes_buf += struct.include_template.format()
                 functions_buf += struct.from_function_template.format()
@@ -129,9 +143,9 @@ class AspnCMarshalingBackend(Backend):
         functions_buf = ""
         for struct in self.header_structs:
             if struct.struct_name not in [
-                "AspnTypeIntegrity",
-                "AspnTypeHeader",
-                "AspnTypeMetadataheader",
+                f"{ASPN_PREFIX_UNVERSIONED}TypeIntegrity",
+                f"{ASPN_PREFIX_UNVERSIONED}TypeHeader",
+                f"{ASPN_PREFIX_UNVERSIONED}TypeMetadataheader",
             ]:
                 includes_buf += struct.include_template.format()
                 functions_buf += struct.to_function_template.format()

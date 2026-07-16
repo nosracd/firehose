@@ -5,6 +5,7 @@ from typing import List, Union
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
     INDENT,
     MatrixType,
     format_and_write_to_file,
@@ -14,7 +15,7 @@ from firehose.backends.aspn.utils import (
     name_to_struct,
 )
 
-ASPN_DIR = ASPN_PREFIX.lower()
+ASPN_DIR = ASPN_PREFIX_LOWER
 
 EXTRA_HEADER_INC = {
     'TypeTimestamp': """
@@ -392,7 +393,7 @@ class Struct:
     ):
         self.constructor_param_buf: List[str] = []
         self.fn_basename: str = (
-            f"{ASPN_PREFIX}_{snake_case_struct_name}".lower()
+            f"{ASPN_PREFIX_LOWER}_{snake_case_struct_name}".lower()
         )
         self.includes: List[str] = []
         self.struct_docstr: str = "<Missing C Docstring>"
@@ -407,9 +408,9 @@ class Struct:
         inheritance_overrides = ''
         if not class_name.startswith('Type'):
             inheritance = ': public TypeHeader'
-            inheritance_overrides = '''
-                Aspn23MessageType get_message_type() const override;
-                void set_message_type(Aspn23MessageType) override;
+            inheritance_overrides = f'''
+                {ASPN_PREFIX}MessageType get_message_type() const override;
+                void set_message_type({ASPN_PREFIX}MessageType) override;
 
                 uint32_t get_vendor_id() const override;
                 void set_vendor_id(uint32_t) override;

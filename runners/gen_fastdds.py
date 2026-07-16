@@ -5,6 +5,7 @@ from os.path import abspath, isdir, join, relpath
 from pathlib import Path
 from shutil import rmtree, which
 from typing import List, Tuple
+from firehose.backends.aspn.utils import ASPN_PREFIX_LOWER, ASPN_VERSION
 
 if which("fastddsgen") is None:
     print(
@@ -18,9 +19,9 @@ FASTRPS_MIN_VERSION = "2.14"
 
 MESON_BUILD_FILENAME = "meson.build"
 
-PROJECT_NAME = "aspn23_dds"
-PROJECT_NAMESPACE = "aspn23_dds"
-VERSION_STR = "23"
+PROJECT_NAME = f"{ASPN_PREFIX_LOWER}_dds"
+PROJECT_NAMESPACE = f"{ASPN_PREFIX_LOWER}_dds"
+VERSION_STR = ASPN_VERSION
 
 TAB = " " * 4
 

@@ -5,6 +5,7 @@ from typing import Any, List, Union
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
     MatrixType,
     format_and_write_to_file,
     is_length_field,
@@ -215,7 +216,7 @@ class Struct:
         self.struct_docstr: str = "<Missing C Docstring>"
         self.struct_name: str = name_to_struct(snake_case_struct_name)
         self.fn_basename: str = (
-            f"{ASPN_PREFIX}_{snake_case_struct_name}".lower()
+            f"{ASPN_PREFIX_LOWER}_{snake_case_struct_name}".lower()
         )
         # All of the parameters (and their types) for the constructor that
         # accepts C++-style args.
@@ -250,12 +251,12 @@ class Struct:
         # inheritance_reset_header: Set parent's ASPN-C pointer to match the child's so it can be used polymorphically
         inheritance_reset_header = ''
         inheritance_overrides = f'''
-        Aspn23MessageType {self.class_name}::get_message_type() const {{{{
+        {ASPN_PREFIX}MessageType {self.class_name}::get_message_type() const {{{{
             nullptr_check();
             auto c_header = ({ASPN_PREFIX}TypeHeader*)c_struct;
             return c_header->message_type;
         }}}}
-        void {self.class_name}::set_message_type(Aspn23MessageType type) {{{{
+        void {self.class_name}::set_message_type({ASPN_PREFIX}MessageType type) {{{{
             nullptr_check();
             auto c_header = ({ASPN_PREFIX}TypeHeader*)c_struct;
             c_header->message_type = type;
@@ -341,7 +342,7 @@ class Struct:
 
             #include <stdexcept>
             {{extra_includes}}
-            namespace {ASPN_PREFIX.lower()}_{matrix_type_lower} {{{{
+            namespace {ASPN_PREFIX_LOWER}_{matrix_type_lower} {{{{
 
             {self.class_name}::{self.class_name}({{constructor_params}}) {inheritance_param} {{{{
                 {{constructor_param_prep}}
@@ -422,7 +423,7 @@ class Struct:
                     throw std::runtime_error("{self.class_name} is holding a null pointer to ASPN-C data!");
             }}}}
             {{extra_definitions}}
-            }}}}  // namespace {ASPN_PREFIX.lower()}_{matrix_type_lower}
+            }}}}  // namespace {ASPN_PREFIX_LOWER}_{matrix_type_lower}
 
         """)
 

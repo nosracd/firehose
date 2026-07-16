@@ -5,6 +5,7 @@ from typing import Any
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
     ASPN_NULLABLE_MACRO,
     format_and_write_to_file,
     name_to_struct,
@@ -17,7 +18,7 @@ class Struct:
         self.struct_docstr: str = "<Missing C Docstring>"
         self.struct_name: str = name_to_struct(snake_case_struct_name)
         self.fn_basename: str = (
-            f"{ASPN_PREFIX}_{snake_case_struct_name}".lower()
+            f"{ASPN_PREFIX_LOWER}_{snake_case_struct_name}".lower()
         )
         self.constructor_param_buf: List[str] = []
         self.new_call_prep: List[str] = []

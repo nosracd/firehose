@@ -5,6 +5,7 @@ from typing import List, Union
 
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
+    ASPN_PREFIX_LOWER,
     INDENT,
     format_and_write_to_file,
     is_length_field,
@@ -85,11 +86,11 @@ class AspnYamlToROSTranslations(Backend):
             # the "to ROS" structs (see above)
             snake_name = pascal_to_snake(s.struct_name)
             imports_aspn.append(
-                f"from aspn23.{snake_name} import {s.struct_name}"
+                f"from {ASPN_PREFIX_LOWER}.{snake_name} import {s.struct_name}"
             )
             imports_aspn.extend(s.imports_enum)
             imports_ros.append(
-                f"from aspn23_ros_interfaces.msg import {s.struct_name} as "
+                f"from {ASPN_PREFIX_LOWER}_ros_interfaces.msg import {s.struct_name} as "
                 f"Ros{s.struct_name}"
             )
             exports.append(f"ros_to_{snake_name} as ros_to_{snake_name}")
@@ -384,7 +385,7 @@ class AspnYamlToROSTranslations(Backend):
                 f"{snake_to_pascal(field_type_name)}"
             )
             self.current_struct.imports_enum.add(
-                f"from aspn23.{struct_name} import {field_type_name}"
+                f"from {ASPN_PREFIX_LOWER}.{struct_name} import {field_type_name}"
             )
             self.current_struct.assignments.append(
                 f"{field_name} = {field_type_name}(old.{field_name})"

@@ -9,7 +9,7 @@ from firehose.backends.aspn.utils import (
     INDENT,
     format_and_write_to_file,
     format_docstring,
-    ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
 )
 
 meson_build_template = """
@@ -30,7 +30,7 @@ aspn_lcm_c_lib = static_library('aspn-lcm',
                             override_options: override_options_lcm)
 aspn_lcm_c_dep = declare_dependency(include_directories: aspn_lcm_c_inc,
                                     link_with: aspn_lcm_c_lib)
-meson.override_dependency('aspn23-lcm', aspn_lcm_c_dep)
+meson.override_dependency('{ASPN_PREFIX_LOWER}-lcm', aspn_lcm_c_dep)
 """
 
 
@@ -44,7 +44,7 @@ class Struct:
             // This code is generated via firehose.
             // DO NOT hand edit code.  Make any changes required using the firehose repo instead
 
-            package {ASPN_PREFIX.lower()}_lcm;
+            package {ASPN_PREFIX_LOWER}_lcm;
 
             {{struct_docstr}}
             struct {self.struct_name} {{{{
@@ -96,9 +96,7 @@ class AspnYamlToLCM(Backend):
                 struct_fields=self._format_struct_fields_buffer(struct),
             )
 
-            base_filenames += [
-                f"{ASPN_PREFIX.lower()}_lcm_{struct.struct_name}"
-            ]
+            base_filenames += [f"{ASPN_PREFIX_LOWER}_lcm_{struct.struct_name}"]
             output_filename = join(
                 self.output_folder, f"{struct.struct_name}.lcm"
             )
@@ -110,7 +108,9 @@ class AspnYamlToLCM(Backend):
         for filename in base_filenames:
             filenames += f'\n\t\'src/{filename}.c\','
         filenames += '\n'
-        meson_build = meson_build_template.format(filenames=filenames)
+        meson_build = meson_build_template.format(
+            filenames=filenames, ASPN_PREFIX_LOWER=ASPN_PREFIX_LOWER
+        )
         output_directory = join(self.output_folder, '..', 'lcm', 'c')
         Path(output_directory).mkdir(parents=True, exist_ok=True)
         meson_build_filename = join(output_directory, 'meson.build')

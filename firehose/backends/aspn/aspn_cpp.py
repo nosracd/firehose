@@ -19,12 +19,16 @@ from .aspn_yaml_to_cpp_source import (
 )
 from .utils import (
     ASPN_PREFIX,
+    ASPN_PREFIX_LOWER,
+    ASPN_PREFIX_UPPER,
+    ASPN_PREFIX_UNVERSIONED,
+    ASPN_PREFIX_UNVERSIONED_UPPER,
     format_and_write_to_file,
     is_length_field,
     snake_to_pascal,
 )
 
-ASPN_DIR = ASPN_PREFIX.lower()
+ASPN_DIR = ASPN_PREFIX_LOWER
 
 EXTRA_BINDINGS = {
     'TypeTimestamp': """.def(py::self + py::self)
@@ -195,16 +199,16 @@ class AspnCppBackend(Backend):
 
                 foreach source : aspn_{matrix}_sources
                     header = source.replace('.cpp', '.hpp')
-                    install_headers(header, install_dir: get_option('includedir') + '/aspn23/{matrix}')
+                    install_headers(header, install_dir: get_option('includedir') + '/{ASPN_PREFIX_LOWER}/{matrix}')
                 endforeach
 
                 pkg = import('pkgconfig')
                 pkg.generate(aspn_{matrix}_libs,
-                    name: 'aspn23-{matrix}',
+                    name: '{ASPN_PREFIX_LOWER}-{matrix}',
                     description: 'ASPN cpp with {matrix} matrices',
                     version: meson.project_version())
 
-                meson.override_dependency('aspn23-{matrix}', aspn_{matrix}_dep)
+                meson.override_dependency('{ASPN_PREFIX_LOWER}-{matrix}', aspn_{matrix}_dep)
 
             endif
         """)
@@ -245,25 +249,25 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
     aspn_xtensor_py_include = include_directories('src')
 
     aspn_xtensor_py_static_lib = static_library('aspn_xtensor_py',
-        sources: [aspn_xtensor_py_sources, 'src/aspn23/xtensor_py/xtensor_bindings.cpp'],
+        sources: [aspn_xtensor_py_sources, 'src/{ASPN_PREFIX_LOWER}/xtensor_py/xtensor_bindings.cpp'],
         include_directories: aspn_xtensor_py_include,
         override_options: ['b_coverage=false', 'b_sanitize=none'],
         dependencies: [aspn_xtensor_py_deps, aspn_c_no_asan_dep],
-        install_dir: python.get_install_dir() / 'aspn23_xtensor',
+        install_dir: python.get_install_dir() / '{ASPN_PREFIX_LOWER}_xtensor',
         install: true)
 
-    install_headers(aspn_xtensor_py_headers, subdir: 'aspn23/xtensor_py')
+    install_headers(aspn_xtensor_py_headers, subdir: '{ASPN_PREFIX_LOWER}/xtensor_py')
 
     aspn_xtensor_py_dep = declare_dependency(
         link_whole: aspn_xtensor_py_static_lib,
         include_directories: [aspn_xtensor_py_include, aspn_c_inc_dir],
         dependencies: aspn_xtensor_py_deps)
 
-    meson.override_dependency('aspn23-xtensor-py', aspn_xtensor_py_dep)
+    meson.override_dependency('{ASPN_PREFIX_LOWER}-xtensor-py', aspn_xtensor_py_dep)
 
     python = import('python').find_installation('python3')
     python_bindings_lib = python.extension_module('{ASPN_DIR}_xtensor',
-        sources: ['src/aspn23/xtensor_py/xtensor_bindings_module.cpp'],
+        sources: ['src/{ASPN_PREFIX_LOWER}/xtensor_py/xtensor_bindings_module.cpp'],
         include_directories: aspn_xtensor_py_include,
         dependencies: aspn_xtensor_py_deps,
         override_options: ['b_coverage=false', 'b_sanitize=none'],
@@ -287,8 +291,8 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
 
         custom_target('stubs',
                       input : python_bindings_lib,
-                      output : ['aspn23_xtensor.pyi' ],
-                      command : [pybind11_stubgen, '-o' + meson.current_build_dir(), 'aspn23_xtensor'],
+                      output : ['{ASPN_PREFIX_LOWER}_xtensor.pyi' ],
+                      command : [pybind11_stubgen, '-o' + meson.current_build_dir(), '{ASPN_PREFIX_LOWER}_xtensor'],
                       env: env,
                       build_by_default : true,
                       install: true,
@@ -296,7 +300,7 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
                       install_dir: python.get_install_dir())
         install_data('py.typed',
                      install_tag: 'python-runtime',
-                     install_dir: python.get_install_dir() / 'aspn23_xtensor')
+                     install_dir: python.get_install_dir() / '{ASPN_PREFIX_LOWER}_xtensor')
     endif
 endif
 '''
@@ -306,6 +310,7 @@ endif
                     matrix_dash=generator.namespace.replace('_', '-'),
                     sources='\n'.join(all_source_files),
                     aspn_dir=ASPN_DIR,
+                    ASPN_PREFIX_LOWER=ASPN_PREFIX_LOWER,
                 )
         meson_build_filename = self.output_folder.replace(
             f'/src/{ASPN_DIR}', '/meson.build'
@@ -397,7 +402,7 @@ endif
 
             #include <functional>
             #include <memory>
-            
+
             {xtensor_include}
 
             #include <{aspn_lower}/aspn.h>
@@ -581,7 +586,7 @@ endif
             ]
             aspn_h = aspn_h_template.format(
                 matrix=generator.namespace,
-                aspn_lower=ASPN_PREFIX.lower(),
+                aspn_lower=ASPN_PREFIX_LOWER,
                 aspn_prefix=ASPN_PREFIX,
                 includes='\n'.join(includes),
                 xtensor_fixed_shape_equals_operator=(
@@ -603,7 +608,7 @@ endif
             )
             aspn_c = aspn_c_template.format(
                 matrix=generator.namespace,
-                aspn_lower=ASPN_PREFIX.lower(),
+                aspn_lower=ASPN_PREFIX_LOWER,
                 aspn_prefix=ASPN_PREFIX,
                 type_get_time_cases=self.type_get_time_cases,
                 type_set_time_cases=self.type_set_time_cases,
@@ -685,7 +690,7 @@ endif
             }}
             """
 
-            basename = f'{ASPN_PREFIX.lower()}_{self.struct_name.lower()}'
+            basename = f'{ASPN_PREFIX_LOWER}_{self.struct_name.lower()}'
 
             self.type_convert_message_cpp_cases += f"""
             case {current_type}: {{
@@ -938,12 +943,14 @@ endif
 
         if enum_values != []:
             unversioned_type_name = field_type_name.replace(
-                ASPN_PREFIX, 'Aspn'
+                ASPN_PREFIX, ASPN_PREFIX_UNVERSIONED
             )
             enum = f'py::native_enum<{field_type_name}>(m, "{unversioned_type_name}", "enum.Enum")'
             for enum_value in enum_values:
                 enum_value = enum_value.split('=')[0]
-                enum_value = enum_value.replace(ASPN_PREFIX.upper(), 'ASPN')
+                enum_value = enum_value.replace(
+                    ASPN_PREFIX_UPPER, ASPN_PREFIX_UNVERSIONED_UPPER
+                )
                 enum += (
                     f'.value("{enum_value}", {field_type_name}::{enum_value})'
                 )
