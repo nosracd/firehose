@@ -389,13 +389,9 @@ def clang_format_file_contents(file_content, output_path):
     with open(output_path, "a", encoding="utf-8") as f:
         f.write(file_content)
     try:
-        cmd = [
-            'clang-format',
-            '--verbose',
-            '-i',
-            f'--style={CLANG_FORMAT}',
-            '--files=',
-        ] + [output_path]
+        cmd = ['clang-format', '-i', f'--style={CLANG_FORMAT}', '--files='] + [
+            output_path
+        ]
         check_call(cmd)
 
     except Exception as ex:
