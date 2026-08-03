@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from typing import Dict, List
 from glob import glob
 from os.path import join
@@ -466,6 +467,79 @@ def _generate_lcm_fingerprint_table(output_dir: str) -> None:
         _write_fingerprints(classes, 'type', file)
 
 
+def _generate_legacy_submodule(lcm_python_output: str) -> None:
+    """
+    Clones a specific revision of the aspn-generated repository and uses it to create a submodule
+    containing previous major release of LCM Python.
+    """
+    git_url = 'https://github.com/is4s/aspn-generated.git'
+    git_revision = '9d0eecc9a841e5fc3dd9a9abe601054d37e6bbba'
+    dest_path = join(lcm_python_output, 'aspn23_lcm', 'legacy')
+
+    print(
+        f'Creating legacy ASPN-LCM Python submodule from {git_url} at revision {git_revision}...'
+    )
+
+    # Create a temporary directory for cloning
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Clone the repository with shallow clone
+        subprocess.run(
+            ['git', 'clone', '--depth', '1', git_url, tmpdir],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # Fetch the specific revision
+        subprocess.run(
+            [
+                'git',
+                '-C',
+                tmpdir,
+                'fetch',
+                '--depth',
+                '1',
+                'origin',
+                git_revision,
+            ],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # Checkout the specific revision
+        subprocess.run(
+            ['git', '-C', tmpdir, 'checkout', git_revision],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # Copy the contents of the source directory to the destination
+        source_dir = join(tmpdir, 'lcm/python/aspn23_lcm')
+        if not os.path.exists(source_dir):
+            raise FileNotFoundError(
+                f'Source directory {source_dir} not found in cloned repository'
+            )
+
+        # Create destination directory if it doesn't exist
+        os.makedirs(dest_path, exist_ok=True)
+
+        # Copy all files from source to destination
+        for item in os.listdir(source_dir):
+            src_item = join(source_dir, item)
+            dst_item = join(dest_path, item)
+            if os.path.isdir(src_item):
+                shutil.copytree(src_item, dst_item, dirs_exist_ok=True)
+            else:
+                shutil.copy2(src_item, dst_item)
+
+    # Add legacy submodule to main __init__.py
+    init_file_path = join(lcm_python_output, 'aspn23_lcm', '__init__.py')
+    with open(init_file_path, 'a') as f:
+        f.write('\nfrom . import legacy\n')
+
+
 # Generate the LCM code after the aspn lcm files are generated
 def post_aspn_lcm(output_dir: str, staging_dir: str) -> None:
     # Run the lcm codegen
@@ -481,6 +555,9 @@ def post_aspn_lcm(output_dir: str, staging_dir: str) -> None:
     # Generate table of fingerprints
     lcm_python_output = join(lcm_output, "python")
     _generate_lcm_fingerprint_table(lcm_python_output)
+
+    # Add legacy submodule
+    _generate_legacy_submodule(lcm_python_output)
 
 
 def stage_files(staging_input_dir: str, output_dir: str) -> None:

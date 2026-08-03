@@ -44,3 +44,15 @@ This occurred because certain fields were changed from `int16_t` to `byte` in or
 represent ASPN in LCM. Specifically, this change was made to fields which represented opaque data
 streams (e.g. image data). This change has the benefit of reducing the size of these fields by half,
 which is important since some of these messages can be very large (e.g. images).
+
+# Legacy Submodule
+
+The ASPN-LCM Python module ships with the latest version of the previous major release via the
+`legacy` submodule. This submodule is provided as a convenience in order to more easily convert
+legacy data to a format compatible with the latest version of ASPN-LCM after breaking changes are
+made.
+
+For example, if between 1.0 and 2.0 the fingerprint for the `measurement_image` message changed, it
+will still be possible to decode that message using `aspn23_lcm.legacy.measurement_image`.
+
+Only the previous major release will be provided.
