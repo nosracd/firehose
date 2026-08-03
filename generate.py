@@ -638,7 +638,7 @@ def get_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def create_targets(args: argparse.Namespace) -> None:
+def create_targets(args: argparse.Namespace) -> dict[str, FirehoseTarget]:
     # Now define the targets
     targets = [
         FirehoseTarget(
