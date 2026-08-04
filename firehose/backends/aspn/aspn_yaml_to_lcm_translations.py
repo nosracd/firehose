@@ -236,8 +236,13 @@ class AspnYamlToLCMTranslations(Backend):
                 )
         else:
             if isinstance(x, int) or type_name in PRIMITIVES:
+                qualifier = ""
+                if nullable:
+                    qualifier += (
+                        f"if not np.isnan(old.{field_name}).any() else None"
+                    )
                 self.current_struct.assignments.append(
-                    f"{field_name} = np.array(old.{field_name})"
+                    f"{field_name} = np.array(old.{field_name})" + qualifier
                 )
             else:
                 self.current_struct.assignments.append(
