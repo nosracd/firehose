@@ -196,36 +196,42 @@ class AspnYamlToLCMTranslations(Backend):
         field_name: str,
         type_name: str,
         nullable: bool | None,
-        x: int | str,
-        y: int | str | None = None,
+        dim1_len: int | str,
+        dim2_len: int | str | None = None,
     ):
-        # Process 1d or 2d array field
+        """Process 1d or 2d array field."""
         if self.current_struct is None:
             return
 
-        # In lcm, add length fields missing from aspn-py
-        if self.current_struct.to_lcm and isinstance(x, str):
-            # set length field if not already set
-            if not any(
-                assign.startswith(x)
+        # In lcm, add length fields missing from aspn-py if not already set
+        if (
+            self.current_struct.to_lcm
+            and isinstance(dim1_len, str)
+            and not any(
+                assign.startswith(dim1_len)
                 for assign in self.current_struct.assignments
-            ):
-                qualifier = ""
-                if nullable:
-                    qualifier = f" if old.{field_name} is not None else 0"
-                self.current_struct.assignments.append(
-                    f"{x} = len(old.{field_name})" + qualifier
-                )
+            )
+        ):
+            qualifier = ""
+            if nullable:
+                qualifier = f" if old.{field_name} is not None else 0"
+            self.current_struct.assignments.append(
+                f"{dim1_len} = len(old.{field_name})" + qualifier
+            )
 
         if self.current_struct.to_lcm:
             qualifier = ""
             if nullable:
-                data_len = str(x) if isinstance(x, int) else f"msg.{x}"
+                data_len = (
+                    str(dim1_len)
+                    if isinstance(dim1_len, int)
+                    else f"msg.{dim1_len}"
+                )
                 nans = f"[math.nan] * {data_len}"
-                if y:
+                if dim2_len:
                     nans = f"[{nans}] * {data_len}"
                 qualifier = f" if old.{field_name} is not None else {nans}"
-            if isinstance(x, int) or type_name in PRIMITIVES:
+            if isinstance(dim1_len, int) or type_name in PRIMITIVES:
                 self.current_struct.assignments.append(
                     f"{field_name} = old.{field_name}.tolist()" + qualifier
                 )
@@ -235,7 +241,7 @@ class AspnYamlToLCMTranslations(Backend):
                     f"for x in old.{field_name}]" + qualifier
                 )
         else:
-            if isinstance(x, int) or type_name in PRIMITIVES:
+            if isinstance(dim1_len, int) or type_name in PRIMITIVES:
                 qualifier = ""
                 if nullable:
                     qualifier += (
