@@ -240,7 +240,7 @@ def configure_extra_icds(
     aspn_icd_dir: str, extra_icd_files_dir: str | None
 ) -> None:
     """
-    Adds any additional YAML files from extra_icd_files_dir ti aspn_icd_dir.
+    Adds any additional YAML files from extra_icd_files_dir to aspn_icd_dir.
     """
 
     # Define the lookup dictionary for file prefixes and target folders
@@ -377,7 +377,9 @@ def run_lcm_gen(output_dir: str) -> None:
         "cpp": join(output_dir, "lcm", "cpp"),
         "c": join(output_dir, "lcm", "c"),
     }
-    lcm_files = glob(f"{output_dir}/aspn-lcm/*.lcm")
+    lcm_files = sorted(
+        glob(f"{output_dir}/aspn-lcm/*.lcm"), key=str.casefold
+    )  # sort for output consistency
 
     # Run the subprocess with the expanded list of files
     subprocess.run(
