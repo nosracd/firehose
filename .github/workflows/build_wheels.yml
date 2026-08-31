@@ -74,6 +74,7 @@ jobs:
   windows:
     name: windows | AMD64 | ${{ matrix.python }}
     runs-on: windows-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -81,6 +82,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+            repository: 'nosracd/aspn-generated'
+            ref: ${{ github.head_ref || github.ref }}
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.2.1
