@@ -34,6 +34,5 @@ before-all = """
 """
 
 [tool.cibuildwheel.windows]
-archs = ["AMD64"]
 before-build = "pip install pkgconf"
 config-settings = { setup-args = ["--vsenv"] }
