@@ -72,13 +72,14 @@ jobs:
   #         path: ./wheelhouse/*.whl
 
   windows:
-    name: windows | AMD64 | ${{ matrix.python }}
-    runs-on: windows-latest
+    name: ${{ matrix.os }} | ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
         python: [cp310-*, cp311-*, cp312-*, cp313-*, cp314-*]
+        os: [windows-latest, windows-11-arm]
 
     steps:
       - uses: actions/checkout@v4
