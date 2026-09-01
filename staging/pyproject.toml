@@ -32,3 +32,8 @@ before-all = """
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 &&
   update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 60
 """
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+before-build = "pip install pkgconf"
+config-settings = { setup-args = ["--vsenv"] }
